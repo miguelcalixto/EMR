@@ -1,4 +1,4 @@
-public class TratamientoControllerDos {
+﻿public class TratamientoControllerDos {
 
     public Account Acc{get; set;}
     public Plan_de_Salud__c planSalud{get;set;}
@@ -354,7 +354,7 @@ EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no ja
         if(!diagnosticosSeleccionadosAEliminar.isEmpty()){
             selDiagnosticoDelete=diagnosticosSeleccionadosAEliminar.remove(0);
             ojoSelDiagnosticoDelete=ojosSeleccionadosAEliminar.remove(0);
-          eliminaDiagnostico();
+        	eliminaDiagnostico();
         }
 
     }
@@ -551,12 +551,27 @@ EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no ja
                 }else if(personal.Rango__c=='Senior'){
                     i.estado='En Proceso';
                 }
-                System.debug('linea 471 '+i.tratamiento);
+                System.debug('linea 471 '+i.tratamiento);                
                 if(tratamientosActivosConfirmacionGuardado==''){
                     tratamientosActivosConfirmacionGuardado='-'+i.tratamiento;
                 }
                 else{
+                    //Primero vamos a verificar que no tenga el tratamiento para no duplicarlo
+                    List<String> arrayTratamientos=tratamientosActivosConfirmacionGuardado.split('-');
+                    System.debug('before remove '+arrayTratamientos);
+                    integer banderaPosicion=0;
+                    boolean yaEstaba=false;
+                    for(String strTrat:arrayTratamientos){
+                        System.debug('iterador de tratamiento '+strTrat);
+                        if(strTrat.contains(i.tratamiento)){
+                            yaEstaba=true;
+                            break;
+                        }
+                        banderaPosicion=banderaPosicion+1;
+                    }
+                    if(!yaEstaba){
                     tratamientosActivosConfirmacionGuardado=tratamientosActivosConfirmacionGuardado+'\\n -'+i.tratamiento;
+                    }
                 }
                 System.debug('tratamientosActivosConfirmacionGuardado '+tratamientosActivosConfirmacionGuardado);
 
@@ -564,6 +579,7 @@ EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no ja
             else if(i.tratamiento==activaCheckList&&(i.estado=='En Proceso'||i.estado=='Por Autorizar')&&i.ojo==ojoActivaCheckList){
                 claseDinamica='slds-show';
                 i.estado='En Espera';
+                //"tratamientosActivosConfirmacionGuardado " contiene los tratamientos para mostrarlos cuando le dan guardar
                 System.debug('String normal '+tratamientosActivosConfirmacionGuardado);
                 System.debug('I tratamiento es '+i.tratamiento);
                 List<String> arrayTratamientos=tratamientosActivosConfirmacionGuardado.split('-');
@@ -613,7 +629,7 @@ EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no ja
                             if(b==c.diagnostico){
                                 c.colorFondo='';
                                 //c.bloqueaBotonEliminar='slds-button slds-button--brand slds-text-align--right fondo-verde-claro';
-                              c.bloqueaBotonEliminar='';
+                            	c.bloqueaBotonEliminar='';
                                 c.checkEliminarDiagnostico=false;
                             }
                         }
@@ -634,7 +650,7 @@ EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no ja
         carePlan  = new List<EHR_Care_Plan_SU__c>();
         planSalud = new Plan_de_Salud__c();
         diagnosticosSeleccionadosAEliminar=new List<String>();
-      ojosSeleccionadosAEliminar=new List<String>();
+    	ojosSeleccionadosAEliminar=new List<String>();
         seHaCreadoEstimacionCampana=false;
 
 
@@ -804,7 +820,7 @@ va a poder eliminar ese tratamiento, hasta que eliminen todos los diagnosticos*/
          if(!diagnosticosSeleccionadosAEliminar.isEmpty()){
             selDiagnosticoDelete=diagnosticosSeleccionadosAEliminar.remove(0);
             ojoSelDiagnosticoDelete=ojosSeleccionadosAEliminar.remove(0);
-          eliminaDiagnostico();
+        	eliminaDiagnostico();
         }
     }
 
@@ -1634,7 +1650,7 @@ system.debug(' despues '+i.tratamiento+' '+i.ojo+' '+i.estado);*/
         }
         //Vamos a generar las estimaciones y meterlas en la lista para insertar oportunidades pero solo si no tienen la restriccion de Ben & Frank
         System.debug('cuentaConvenioBF'+cuentaConvenioBF );
-        if(!cuentaConvenioBF){
+       // if(!cuentaConvenioBF){
             listaEstimacionesACargar = new List<Opportunity>();
             List<String> estimacionesRepetidas=new List<String>(); //en esta lista se guardan aquellas estimaciones que ya fueron creadas para no repetir
             boolean estaRepetida=false;
@@ -1642,7 +1658,7 @@ system.debug(' despues '+i.tratamiento+' '+i.ojo+' '+i.estado);*/
                 Opportunity oportunidad=new Opportunity();
                 if(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!=null ){
                     if(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!=''){
-          System.debug('i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!='+i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c);
+					System.debug('i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!='+i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c);
                         estaRepetida=false;
                         if(!estimacionesRepetidas.isEmpty()){
                             for(String f:estimacionesRepetidas){
@@ -1655,10 +1671,14 @@ system.debug(' despues '+i.tratamiento+' '+i.ojo+' '+i.estado);*/
                         }
                         if(!estaRepetida){
                             estimacionesRepetidas.add(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c );
-                            oportunidad=ElaboraTipoEstimacion(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c );
-                            oportunidad.EHR_Care_Plan_SU__c=i.id;
-
-                            listaEstimacionesACargar.add(oportunidad);
+                            System.debug('cuentaConvenioBF='+cuentaConvenioBF);
+                            System.debug('i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c='+i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c);
+                            if((!cuentaConvenioBF)||(cuentaConvenioBF&&i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!='Optica')){
+                                System.debug('linea 1661');
+                                oportunidad=ElaboraTipoEstimacion(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c );
+                                oportunidad.EHR_Care_Plan_SU__c=i.id;                          
+                            	listaEstimacionesACargar.add(oportunidad);    
+                            }                            
                         }
 
                     }
@@ -1675,7 +1695,7 @@ system.debug(' despues '+i.tratamiento+' '+i.ojo+' '+i.estado);*/
 
             }catch(Exception e){}
             System.debug('Estas estimaciones se cargaron '+listaEstimacionesACargar);
-        }
+      //  }
         //Metodos para eliminar las estimaciones y problemas asociados, estan en esta variable planSaludEliminarEstimacionesProblemas
         if(!planSaludEliminarEstimacionesProblemas.isEmpty()){
             List<Opportunity> oportunidadesEliminar = new List <Opportunity>();
