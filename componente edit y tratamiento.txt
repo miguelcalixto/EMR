@@ -3,7 +3,7 @@
         <style type="text/css">
             .tabla-uno{
                 background:#cef4f7 !important;
-                color: #000000 !important;
+                color: #000000 !importante;
             }
             .tabla-dos{
                 background:#FFFFFF !important;
