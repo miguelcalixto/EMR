@@ -1,0 +1,623 @@
+@isTest
+public class TestTratamientosCtrl {
+    
+    //tratamiento en espera y funcion autoriza
+    static testMethod void TestTratamientosCtrl1(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr.tratamientosVisual'+tr.tratamientosVisual);
+        System.debug('tr.diagnosticosvisual'+tr.diagnosticoVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Espera'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    
+    //tratamiento en espera y funcion autoriza con personal senior
+    static testMethod void TestTratamientosCtrl2(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr2 = new TratamientoControllerDos();
+        
+        Etapa_Paciente__c etapa=new  Etapa_Paciente__c();
+        etapa=[SELECT Id, Personal__c FROM Etapa_Paciente__c where id=:tr2.etapa.id];
+        Personal__c persona=new Personal__c();
+        persona=[SELECT Id, Rango__c FROM Personal__c where id=:etapa.Personal__c];
+        persona.Rango__c='Senior';
+        update persona;
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        System.debug('tr.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Espera'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    //tratamiento en procesp y funcion autoriza
+    static testMethod void TestTratamientosCtrl3(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',2,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Proceso'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    
+    //tratamiento en realizada y funcion autoriza
+    static testMethod void TestTratamientosCtrl4(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',3,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='Realizada'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    
+    //tratamiento en cancelaDA y funcion autoriza
+    static testMethod void TestTratamientosCtrl5(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',4,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='Cancelada'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    //tratamiento en por autorizar y funcion autoriza
+    static testMethod void TestTratamientosCtrl6(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='Por Autorizar'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    //tratamiento en no autorizada y funcion autoriza
+    static testMethod void TestTratamientosCtrl7(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',6,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='No Autorizada'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    //tratamiento en  eliminado y funcion autoriza
+    static testMethod void TestTratamientosCtrl8(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',7,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='Eliminado'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        
+    }
+    
+    //tratamiento en  espera y funcion autoriza, condiciones sin care plan
+    static testMethod void TestTratamientosCtrl9(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',7,false).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        //tr.tratamientosVisual.remove(0);
+        
+        //tr.tratamientosVisual.diagnosticos=Chalazion uno
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Espera'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                System.debug(' tr.activaCheckList'+ tr.activaCheckList);
+                System.debug(' tr.ojoActivaCheckList'+ tr.ojoActivaCheckList);
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                    break;
+                }
+            }
+            
+            
+        }
+        tr.autoriza();
+        System.debug('tr4.tratamientosVisual'+tr.tratamientosVisual);
+        tr.GuardarPS();
+        
+    }
+    
+    
+    //tratamiento en por autorizar y funcion autoriza
+    static testMethod void TestTratamientosCtrl10(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.diagnosticoWrapper dgw : tr.diagnosticoVisual){
+            
+            tr.selDiagnosticoDelete=dgw.diagnostico;
+            tr.ojoSelDiagnosticoDelete=dgw.ojo;
+        }
+        tr.eliminaDiagnostico();
+        tr.FuncionDummy();
+        tr.FuncionDummyDos();
+        tr.RegresarBack();
+        //tr.GuardarPS();
+        
+    }
+     //tratamiento en por autorizar y funcion autoriza, elimina diagnosticos con base al metodo nuevo de los checks
+    static testMethod void TestTratamientosCtrl1_5(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        for(TratamientoControllerDos.diagnosticoWrapper dgw : tr.diagnosticoVisual){
+            
+           /* tr.selDiagnosticoDelete=dgw.diagnostico;
+            tr.ojoSelDiagnosticoDelete=dgw.ojo;*/
+            dgw.checkEliminarDiagnostico=true;
+        }
+        tr.guardaDiagnosticosEliminadosEnLista();
+        tr.FuncionDummy();
+        tr.FuncionDummyDos();
+        tr.RegresarBack();
+        //tr.GuardarPS();
+        
+    }
+    //Crea diagnostico template y care plan template para agregarlo
+    static testMethod void TestTratamientosCtrl11(){
+        
+        
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        String nombre='Catarata';
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        EHR_Care_Plan_Template_SU__c oCT = crearTemplate(1,nombre).get(0);
+        List<EHR_Diagnosticos_Template__c> lDiagnostico = new List<EHR_Diagnosticos_Template__c>();
+        
+        EHR_Diagnosticos_Template__c x = new EHR_Diagnosticos_Template__c();
+        x.Name = nombre;
+        x.Care_Plan_Template__c = oCT.id;
+        lDiagnostico.add(x);
+        
+        System.debug('EL DIAGNOSTICO template ES '+lDiagnostico);
+        insert lDiagnostico;
+        
+        
+        
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        tr.seleccionadoModalDiagnostico='Catarata';
+        tr.ojoDiagnosticoElegido='OD';
+        tr.AgregaDiagnostico();
+        tr.GuardarPS();
+        
+    }
+    //Vamos a insertar dos diagnosticos o tratamientos desde el inicio
+    static testMethod void TestTratamientosCtrl12(){
+        
+        
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        String nombre='Catarata';
+        EHR_Care_Plan_Template_SU__c oCT = crearTemplate(1,nombre).get(0);
+        List<EHR_Diagnosticos_Template__c> lDiagnostico = new List<EHR_Diagnosticos_Template__c>();
+        
+        EHR_Diagnosticos_Template__c x = new EHR_Diagnosticos_Template__c();
+        x.Name = nombre;
+        x.Care_Plan_Template__c = oCT.id;
+        lDiagnostico.add(x);
+        
+        System.debug('EL DIAGNOSTICO template ES '+lDiagnostico);
+        insert lDiagnostico;
+        
+        System.debug('OEp'+oEp);
+        Account cuenta=new Account();
+        cuenta=[select id, Name from Account where id=:oEp.Paciente__c];
+        EHR_Condition_SU__c condicion=new EHR_Condition_SU__c();
+        condicion.EHR_Diagnostico_Template__c=lDiagnostico.get(0).id;
+        condicion.Paciente__c=cuenta.id;
+        condicion.Ojo__c='OD';
+        insert condicion;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        
+        tr.GuardarPS();
+        
+    }
+    
+    //tratamiento en  espera, funcion elimina y guardamos
+    static testMethod void TestTratamientosCtrl13(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',7,false).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        System.debug('tr3.tratamientosVisual'+tr.tratamientosVisual);
+        //tr.tratamientosVisual.remove(0);
+        
+        //tr.tratamientosVisual.diagnosticos=Chalazion uno
+        for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Espera'){
+                System.debug('trw es '+trw);
+               
+                tr.selTratamientoDelete    =  trw.tratamiento;
+            tr.ojoSelTratamientoDelete = trw.ojo;
+            
+            }
+            
+            
+        }
+       tr.EliminaTratamiento();
+        System.debug('tr4.tratamientosVisual'+tr.tratamientosVisual);
+        tr.GuardarPS();
+        
+    }
+    
+    //Crea diagnostico template y care plan template para agregarlo
+    static testMethod void TestTratamientosCtrl14(){
+        
+        
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsDos.crearEtapaPaciente(1,'Preparación','Chalazion',5,true).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        String nombre='Catarata';
+        EHR_Care_Plan_Template_SU__c oCT = crearTemplate(1,nombre).get(0);
+        List<EHR_Diagnosticos_Template__c> lDiagnostico = new List<EHR_Diagnosticos_Template__c>();
+        
+        EHR_Diagnosticos_Template__c x = new EHR_Diagnosticos_Template__c();
+        x.Name = nombre;
+        x.Care_Plan_Template__c = oCT.id;
+        lDiagnostico.add(x);
+        
+        System.debug('EL DIAGNOSTICO template ES '+lDiagnostico);
+        insert lDiagnostico;
+        
+        
+        
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        TratamientoControllerDos tr = new TratamientoControllerDos();
+        
+        
+        tr.seleccionadoModalDiagnostico='Catarata';
+        tr.ojoDiagnosticoElegido='OD';
+        tr.AgregaDiagnostico();
+            
+    for(TratamientoControllerDos.TratamientoWrapper trw : tr.tratamientosVisual){
+            if(trw.estado=='En Espera'&&trw.tratamiento=='Catarata'){
+                System.debug('trw es '+trw);
+                tr.activaCheckList = trw.tratamiento;
+                
+                tr.ojoActivaCheckList = trw.ojo;
+                System.debug(' tr.activaCheckList'+ tr.activaCheckList);
+                System.debug(' tr.ojoActivaCheckList'+ tr.ojoActivaCheckList);
+                if(trw.checklist!=null){
+                    if(trw.checklist){
+                        trw.checklist = false;
+                    }else{
+                        trw.checklist = true;
+                    }
+                    break;
+                }else
+                {
+                    trw.checklist = true; 
+                    
+                }
+             System.debug('trw2 es '+trw);
+            }
+            
+            
+        }
+        tr.autoriza();
+        tr.GuardarPS();
+        
+    }
+    
+    public static List<EHR_Care_Plan_Template_SU__c> crearTemplate(Integer iNumDeRegistros,String nombreUniversal){
+        List<EHR_Care_Plan_Template_SU__c> lCaraTemplate = new List<EHR_Care_Plan_Template_SU__c>();  
+        for(Integer i = 0 ; i <iNumDeRegistros ; i++){
+            Integer md = math.mod(i, 2);
+            
+            EHR_Care_Plan_Template_SU__c x = new EHR_Care_Plan_Template_SU__c();
+            x.Name =nombreUniversal;
+            x.Subespecialidad__c = 'Glaucoma';
+            
+            
+            //x.Activo__c = true;
+            x.AgendaTX__c = 'Programacion';
+            x.Tipo_CX_TX__c = 'Cirugía';
+            
+            x.Estudios__c='estudio 1;estudio 2';
+            x.Tipo_de_Estimacion__c='Farmacia';
+            lCaraTemplate.add(x);
+        }
+        System.debug('el care plan template su es '+lCaraTemplate);
+        insert lCaraTemplate;
+        return lCaraTemplate;
+    }   
+    
+}

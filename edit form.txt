@@ -1,0 +1,886 @@
+public class EHR_EditFormCtrl {
+    public Account objPaciente {get;set;}
+    public Personal__c oPersonal{get;set;}
+    public Problem_SU__c objProblem {get;set;}
+    public Opportunity objEstimaciones {get;set;}
+    public EHR_Consulta__c objConsulta {get;set;}
+    public Etapa_Paciente__c oEPaciente {get;set;}
+    public EHR_Condition_SU__c objDiagnostico {get;set;}
+    public EHR_Hallazgo_Template__c objHallazgoTpl {get;set;}
+    public EHR_Diagnosticos_Template__c objDiagnosticoTpl {get;set;}
+    public String idEtapa_ctr;
+    public String idPaciente_ctr;
+    public String nombrePX {get;}
+    public String urlActual {get;set;}
+    public Boolean generaGuardado {get;set;}
+    public List<string> lEtapas{get;set;}
+    public Map<String, Boolean> mapSeccionShow {get;set;}
+    public Map<String, Boolean> mapSeccionEdit {get;set;}
+
+    //Bandera para saber si se ejecuto la funcion setDiagnosticos cuando se pasa a Optica
+    private boolean seEjecutoAntes{get; set;}
+
+    public EHR_EditFormCtrl(){
+        objConsulta     = new EHR_Consulta__c();
+        objProblem      = new Problem_SU__c();
+        objEstimaciones = new Opportunity();
+        urlActual       = ApexPages.currentPage().getURL();
+        generaGuardado  = false;
+        seEjecutoAntes=false;
+    }
+
+    // Inicializa variables: esto se genera por que los id llegan vacios
+    public void setidPaciente_ctr (String s) {
+        idPaciente_ctr = s;
+        InicializaPaciente();
+    }
+
+    public String getidPaciente_ctr() {
+        return idPaciente_ctr;
+    }
+
+    public void setidEtapa_ctr (String s) {
+        idEtapa_ctr = s;
+        InicializaEtapa();
+    }
+
+    public String getidEtapa_ctr() {
+        return idEtapa_ctr;
+    }
+
+    public void InicializaEtapa(){
+        // <<< Secciones a ver y modificar
+        mapSeccionShow = new Map<String,Boolean>();
+        mapSeccionEdit = new Map<String,Boolean>();
+
+        px_parametros__c confParametrosPx = px_parametros__c.getOrgDefaults();
+
+        for(String sSect : confParametrosPx.Secciones_Historia_Clinica__c.split(';')){
+            mapSeccionShow.put(sSect,false);
+            mapSeccionEdit.put(sSect,false);
+        }
+
+        for(Etapa_Paciente__c oP : [SELECT id,Personal__c,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                                    Visita__c,Clinica__c,Flujo__c,Flujo__r.Name, Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                                    Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c, Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c,
+                                    Configuracion_Flujo__r.Continuar_con_paciente__c,Stamp_Inicio_Dilatacion__c
+                                    FROM Etapa_Paciente__c WHERE id= :idEtapa_ctr]){
+                                        oEPaciente = oP;
+                                    }
+
+        //Busca Pesonal clinica
+        for(Personal__c p:[SELECT id,Estatus_Personal__c,Etapas__c,Puesto__c FROM Personal__c WHERE Id=:oEPaciente.Personal__c]){
+            oPersonal = p;
+        }
+
+        // asigna privilegios ver
+        if(oEPaciente.Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c != null){
+            for(String secVer : oEPaciente.Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c.split(';')){
+                mapSeccionShow.put(secVer,true);
+            }
+        }
+
+        if(oEPaciente.Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c != null){
+            for(String secEdit : oEPaciente.Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c.split(';')){
+                mapSeccionEdit.put(secEdit,true);
+            }
+        }
+        // Secciones a ver y modificar >>>
+
+        if(oEPaciente.Etapa__c == 'Examinación' || oEPaciente.Etapa__c == 'Refracción' || oEPaciente.Etapa__c == 'Preparación'){
+            inicializaConsulta();
+        //} else {
+        //    inicializaCirugia();
+        }
+    }
+
+    //public void inicializaCirugia(){
+        //if(objProblem.id == null){
+        //    for(Problem_SU__c recordCirugia : [ SELECT  Id, Tratamiento__c, Tratamiento__r.Paciente__c,
+        //                                         OwnerId, IsDeleted, Name, Accion_Tomada__c, Agudeza_Visual__c, Anesteciologo__c,
+        //                                         Asistente_Quirurgico_1__c, Asistente_Quirurgico_2__c, Asistente_Quirurgico_3__c,
+        //                                         Campo_prueba_set__c, Categoria_de_Cx__c, Clasificacion_de_Complicacion__c, Consejero__c, Dr_crea_Tratamiento__c,
+        //                                         Dr_que_Autoriza__c, doctor_Opera__c, Estado_CXTR_su__c, Observaciones_Anestesiologo__c, Observaciones_Consejero__c,
+        //                                         Observaciones_Dr_que_Opero__c, Pasos_en_que_ocurre_la_complicacion__c, Razon_de_Retraso__c, Re_Operado__c,
+        //                                         Sala_Quirofano__c, Tiempo_de_Finalizacion__c, Tiempo_de_Inicio__c, Tiempo_de_Cirugia__c,
+        //                                         Tipo_de_Lente__c, Ojo_a_Operar__c, Poder_de_Lente__c, Fecha_de_Cirugia__c, Tipo_de_Cirugia__c, Tipo_de_Anestesia__c,
+        //                                         Fecha_de_Cancelacion__c, Care_Plan_Template_Problem_SU__c, Comentarios__c, Observaciones_Complicacion__c,
+        //                                         Tipo_de_Complicacion__c
+        //                                       FROM Problem_SU__c
+        //                                       WHERE Tratamiento__r.Paciente__c = :idPaciente_ctr
+        //                                       AND Tratamiento__r.Estado__c = 'En Proceso']){
+        //                                           objProblem = recordCirugia;
+        //                                       }
+        //}
+    //}
+
+    public void inicializaConsulta(){
+        if(objConsulta.id == null){
+            for(EHR_Consulta__c recordConsulta : [SELECT Id,
+                                                    Paciente__c, Fecha__c, Motivo_de_consulta__c, Preparacion_Usuario__c,
+                                                    Agudeza_visual_Lejana_OD__c, Agudeza_visual_Lejana_OI__c, Lejana_con_Estenopeico_OD__c, Lejana_con_Estenopeico_OI__c,
+                                                    Lejana_con_Graduaci_n_OD__c, Lejana_con_Graduaci_n_OI__c, Cercana_OD__c, Cercana_OI__c,
+                                                    Autorefractometro_Esfera_OD__c, Autorefractometro_Esfera_OI__c, Esfera_OD__c, Esfera_OI__c,
+                                                    PIO_OD__c, PIO_OI__c, Keratometrias_OD__c, Keratometrias_OI__c,
+                                                    Keratometria_Eje_OD_1__c,Keratometria_Eje_OD_2__c,Keratometria_Eje_OI_1__c,Keratometria_Eje_OI_2__c,
+                                                    Astigmatismo_Corneal_Eje_OD__c,Astigmatismo_Corneal_Eje_OI__c,
+                                                    Refraccion_Fecha_Creacion__c, Capacidad_visual_OD__c, Curva_base_OD__c, Diametro_OD__c,
+                                                    Poder_OD__c, Prisma_OD__c, Adicion__c,
+                                                    Diagnostico_refractivo_OD__c, Diagnostico_refractivo_OI__c, Observaciones__c, Capacidad_visual_OI__c,
+                                                    Curva_base_OI__c, Diametro_OI__c, Poder_OI__c, Prisma_OI__c, Ojo_de_diagnostico__c,
+                                                    Examenes_Clinicos_Fecha_Creacion__c, Examenes_Clinicos_Usuario__c, Fotomotor_OD__c, Fotomotor_OI__c,
+                                                    Consensual_OD__c, Consensual_OI__c, Motomotor_OD__c, Motomotor_OI__c,
+                                                    Parpados_OD__c, Parpados_OI__c, V_a_lagrimal_OD__c, V_a_lagrimal_OI__c,
+                                                    Conjuntiva_OD__c, Conjuntiva_OI__c, Cornea_OD__c, Cornea_OI__c,
+                                                    C_mara_anterior_OD__c, C_mara_anterior_OI__c, Gonioscop_a_OD__c, Gonioscopia_OI__c,
+                                                    Iris_OD__c, Iris_OI__c, Vitreo_OD__c, Vitreo_OI__c,
+                                                    Excavaci_n_OD__c, Excavaci_n_OI__c, Papila_OD__c, Papila_OI__c,
+                                                    Macula_OD__c, Macula_OI__c, Retina_OD__c, Retina_OI__c,
+                                                    Plan_de_tratamiento__c, Otros_Hallazgos_OD__c, Otros_Hallazgos_OI__c, Pronostico__c, Urgencia__c, Motivo_de_urgencia__c,
+                                                    Apertura_Palpebral_OD__c,Apertura_Palpebral_OI__c,Hendidura_Palpebral_OD__c,Hendidura_Palpebral_OI__c,
+                                                    Astigmatismo_Corneal_OD__c,Astigmatismo_Corneal_OI__c,Refraccion_OD__c,Refraccion_OI__c,
+                                                    Tipo_de_Lente__c, Posicion_de_Lente_OD__c, Posicion_de_Lente_OI__c, Movimientos_OD__c, Movimientos_OI__c,
+                                                    Rotacion_OD__c, Rotacion_OI__c, Push_Up_OD__c, Push_Up_OI__c,
+                                                    Interaccion_Palpebral_OD__c, Interaccion_Palpebral_OI__c, Observaciones_Flurograma__c,
+                                                    C_B_OD__c, C_B_OI__c, C_B_2_OD__c, C_B_2_OI__c, DIAM_OD__c, DIAM_OI__c, Boveda_OD__c, Boveda_OI__c,
+                                                    Faldilla_OD__c, Faldilla_OI__c, RX_OD__c, RX_OI__c, P_F_A_V_OD__c, P_F_A_V_OI__c,
+                                                    Valoracion_Estatica_OD__c, Valoracion_Estatica_OI__c,
+                                                    Cilindro_OD_Ref__c,Cilindro_OI_Ref__c,Eje_OD_Ref__c,Eje_OI_Ref__c,
+                                                    Keratometrias_OD_Ref_1__c,Keratometrias_OI_Ref_1__c,Keratometrias_OD_Ref_2__c,Keratometrias_OI_Ref_2__c,
+                                                    NO_OD__c,NO_OI__c,NC_OD__c,NC_OI__c,C_OD__c,C_OI__c,P_OD__c,P_OI__c,Cristalino_OD__c,Cristalino_OI__c,Refraccion_dilatacion__c,
+                                                    Glucosa__c, Motivo_por_que_no_pasa_con_Oftalmologo__c, Px_pasa_con_Oftalmologo__c, Dilatar_proxima_consulta__c,
+                                                    Posicion_Primaria_de_la_Mirada_OD__c, Posicion_Primaria_de_la_Mirada_OI__c, Aparato_para_tomar_PIO__c,
+                                                    Medicion_del_angulo_de_desviacion_OD__c, Medicion_del_angulo_de_desviacion_OI__c,
+                                                    PIO_OD_Examinacion__c, PIO_OI_Examinacion__c, Defecto_pupilar_aferente_relativo_OD__c, Defecto_pupilar_aferente_relativo_OI__c,
+                                                    Motivo_por_el_que_pasa_con_Oftalmologo__c, Presion_Arterial__c, Paciente_no_se_Refracta__c, Motivo_de_consulta_Medico__c,
+                                                    Esfera_OD_2__c, Esfera_OI_2__c, Cilindro_OD__c, Cilindro_OI__c, Eje_OD__c, Eje_OI__c,
+                                                    Cilindro_OD_2__c, Cilindro_OI_2__c, Eje_OD_2__c, Eje_OI_2__c,
+                                                    Capacidad_visual_OD_2__c, Capacidad_visual_OI_2__c, Prisma_OD_2__c, Prisma_OI_2__c, Adicion_2__c, Refractar_proxima_consulta__c,
+                                                    Se_aplicara_lente_de_contacto__c, Plan_de_Tratamiento_Resumen__c, Observaciones_Comentarios_Medico__c
+                                                  FROM EHR_Consulta__c
+                                                  WHERE Paciente__c = :oEPaciente.Paciente__c
+                                                  AND Visita__c = :oEPaciente.Visita__c
+                                                  ORDER BY CreatedDate DESC
+                                                  LIMIT 1 ] ){
+                                                      objConsulta = recordConsulta;
+                                                  }
+        }
+    }
+
+    public void InicializaPaciente(){
+
+        if(generaGuardado != true){
+            for(Account recordAccount : [ SELECT Id,
+                                         Edad__c, Necesidades_especiales__c,Foto_Px__c,
+                                         Familiar_con_diabetes__c, Familiar_con_hipertension__c, Familiar_con_glaucoma_dos__c, Familiar_con_cancer__c, Familiar_con_catarata__c,
+                                         Familiar_enfermedad_reumatologica__c, Familiar_con_otra_enfermedad_sistemica__c, Familiar_con_queratocono__c,
+                                         Frecuencia_usa_computadora__c, Frecuencia_ve_Television__c, Frecuencia_de_lectura__c, Frecuencia_maneja__c, Frecuencia_aire_libre__c,
+                                         Frecuencia_practica_deporte__c, Frecuencia_con_la_que_bebe__c, Frecuencia_con_la_que_fuma__c,
+                                         Diabetes__c, Diabetes_tiempo_evolucion__c, Diabetes_Tratamiento_dos__c, Hipertension__c, Hipertension_tiempo_evolucion_dos__c, Hipertension_Tratamiento_dos__c,
+                                         Glaucoma__c, Glaucoma_tiempo_evolucion__c, Glaucoma_Tratamiento__c, Estrabismo__c, Estrabismo_Tiempo_Evolucion__c, Estrabismo_Tratamiento__c,
+                                         Cancer__c, Cancer_Tiempo_de_Evolucion__c, Cancer_Tratamiento__c, Cirugias_no_oftalmologicas__c, Problemas_Pulmonares__c, Problemas_Pulmonares_Tratamiento__c,
+                                         Epilepsia__c, Epilepsia_Tratamiento__c, Otras_Enfermedades__c, Internamientos__c, Alergias__c, Problemas_Cardiacos__c, Problemas_Cardiacos_Tratamiento__c,
+                                         Enfermedades_Reumatologicas__c, Sindrome_de_Down__c, Otras_Enfermedades_Tratamiento__c,
+                                         Usa_de_lentes__c, Usa_lentes_de_contacto__c, Tipo_de_lente__c, Desea_independencia_de_lentes__c, Usa_gotas_oftalmicas__c, Cuales_gotas_oftalmicas_dos__c,
+                                         Otras_Gotas_Oftalmicas__c, Ha_sufrido_golpes_o_heridas_en_los_ojos__c, Golpes_en_ojos_hace_cuanto__c, Golpes_en_ojos_describa__c,
+                                         Cirugia_tratamiento_Catarata__c, Cirugia_tratamiento_Retina__c, Cirugia_tratamiento_Glaucoma__c, Cirugia_tratamiento_Via_Lagrimal__c,
+                                         Cirugia_tratamiento_Parpados__c, Cirugia_tratamiento_Estrabismo__c, Cirugia_tratamiento_Cornea__c, Cirugia_tratamiento_Refractiva_LASIK__c,
+                                         OD_tratamiento_laser__c, OI_tratamiento_laser__c, OD_tra_laser_Numero_de_aplicaciones__c, OI_tra_laser_Numero_de_aplicaciones__c,
+                                         OD_Aplicado_inyecciones_Intraoculares__c, OI_Aplicado_inyecciones_Intraoculares__c, OD_Numero_inyecciones_intraoculares__c, OI_Numero_inyecciones_intraoculares__c,
+                                         Sufrio_enfermedades_durante_el_embarazo__c, Fue_producto_del_embarazo_numero__c, Numero_de_partos__c, Numero_de_cesareas__c, Numero_de_abortos__c,
+                                         Complicaciones_durante_el_embarazo__c, Enfermedades_durante_el_embarazo__c, Nace_mediante__c, Semanas_de_gestacion__c, Nace_a_termino__c, Peso_al_nacer_KG__c,
+                                         Status_de_peso__c, Necesito_incubadora__c, Dias_en_incubadora__c, Puntacion_de_apgar__c, Sepsis__c, Necesito_oxigeno__c,
+                                         Fijola_mirada_a_los_2_meses__c, A_los_cuantos_meses_fijo_la_mirada__c, Se_sento_solo_sin_ayuda_a_los_4_meses__c, A_los_cuantos_meses_se_sento__c,
+                                         Hablo_a_los_12_meses__c, A_los_cuantos_a_os_Hablo__c,Antecedentes_Gineco_obstetricos__c,Desarrollo_Psicomotriz__c, Campana__r.Convenio_Camp__r.No_vender_lentes__c
+                                         FROM Account
+                                         WHERE Id = :idPaciente_ctr]){
+                                             objPaciente = recordAccount;
+                                         }
+        }
+        generaGuardado = true;
+    }
+
+    public PageReference GuardarHC(){
+        PageReference PagewId = new PageReference(urlActual);
+        PagewId.setRedirect(true);
+        update objPaciente;
+        return PagewId;
+    }
+
+    //Funcion que envia a la pantalla de captura el paciente de la fila seleccionada
+    public PageReference SiguienteP(){
+        integer cont=0;
+        if(oPersonal.Etapas__c != null){
+            list<string> lEtapastemp = oPersonal.Etapas__c.split(';');
+            string sEtAt = '';
+            string sEtAs = '';
+            PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+            PagewId.getParameters().put('Clinica',oEPaciente.Clinica__r.Name);
+            PagewId.getParameters().put('Consultorio',oEPaciente.Consultorio__c);
+            PagewId.setRedirect(true);
+            list<Etapa_Paciente__c> lOPX = new list<Etapa_Paciente__c>();
+            for(Etapa_Paciente__c oE:[SELECT Id,Stamp_Inicio_Atencion__c,Configuracion_Flujo__r.Pagina_a_Cargar__c,Estatus__c,Personal__c,Etapa__c
+                                        FROM Etapa_Paciente__c
+                                        WHERE Puestos__c LIKE :'%'+oPersonal.Puesto__c+'%' AND Etapa__c IN:lEtapastemp
+                                          AND (Estatus__c =:'En Espera' OR (Estatus__c=:'Asignado' AND Personal__c=:oPersonal.Id))
+                                          AND Clinica__c  = :oEPaciente.Clinica__c
+                                          AND Stamp_Llegada__c = TODAY
+                                        ORDER BY Estatus__c DESC,
+                                            Especialidad__c DESC,
+                                            Primero_en_Fila__c DESC,
+                                            Urgente__c DESC,
+                                            Visita__r.Fecha_y_hora_de_la_Visita__c LIMIT 1]){
+                    //system.debug('Despues:');
+                    PagewId = new PageReference('/apex/'+oE.Configuracion_Flujo__r.Pagina_a_Cargar__c);
+                    PagewId.getParameters().put('IdEtapa',oE.Id);
+                    PagewId.setRedirect(true);
+                    oE.Estatus__c               = 'En Atención';
+                    oE.Stamp_Inicio_Atencion__c = datetime.now();
+                    oE.Hora_Atencion__c         = oE.Stamp_Inicio_Atencion__c.format('hh:mm a');
+                    oE.Personal__c              = oPersonal.id;
+                    oE.Consultorio__c           = oEPaciente.Consultorio__c;
+                    oE.Primero_en_Fila__c       = false;
+                    sEtAt = oE.Etapa__c;
+                    update oE;
+                    oPersonal.Estatus_Personal__c = 'Atendiendo';
+                    update oPersonal;
+                    setBitacora(oEPaciente, oPersonal); //Etapas_Paciente__c, Personal__c
+                    return PagewId;
+            }
+          return PagewId;
+        } else {
+            return null;
+        }
+    }
+
+    public PageReference RegresarAFila(){
+        PageReference PagewId = SiguienteP();//new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+        PagewId.setRedirect(true);
+        if(oEPaciente.Stamp_Inicio_Dilatacion__c != null){
+            oEPaciente.Estatus__c               = 'Asignado';
+            oEPaciente.Primero_en_Fila__c       = true;
+        }else{
+            oEPaciente.Estatus__c               = 'En Espera';
+            oEPaciente.Stamp_Inicio_Atencion__c = null;
+            oEPaciente.Personal__c              = null;
+            oEPaciente.Hora_Atencion__c         = null;
+            oEPaciente.Consultorio__c           = null;
+            oEPaciente.Primero_en_Fila__c       = true;
+        }
+        update oEPaciente;
+        return PagewId;
+    }
+
+    public PageReference RegresarEtapaAnterior(){
+
+        for(Etapa_Paciente__c rowEPaciente : [SELECT id, Personal__r.Estatus_Personal__c, Etapa__c
+                                            FROM Etapa_Paciente__c
+                                            WHERE CreatedDate = TODAY
+                                            AND Paciente__c = :oEPaciente.Paciente__c
+                                            AND Etapa__c != :oEPaciente.Etapa__c
+                                            ORDER BY CreatedDate DESC
+                                            LIMIT 1]){
+            // Regresa al PX a la etapa seleccionada y dependiendo el status del usuario ve si lo asigna o lo pone en espera
+            if(rowEPaciente.Personal__r.Estatus_Personal__c == 'Fuera'){
+              rowEPaciente.Personal__c = null;
+              rowEPaciente.Estatus__c = 'En Espera';
+            }else{
+              rowEPaciente.Estatus__c = 'Asignado';
+            }
+            rowEPaciente.Primero_en_Fila__c = true;
+            update rowEPaciente;
+
+            // Guarda Registro del Evento
+            AdminListasCtrl classAdminListas = new AdminListasCtrl();
+            classAdminListas.guardaEventoEtapa(oEPaciente, 'Regresar a etapa anterior', rowEPaciente); // EtapaActual, Evento, EtapaRegreso
+        }
+
+        // Modifica status de Personal
+        if(oPersonal.Estatus_Personal__c == 'Atendiendo')
+          oPersonal.Estatus_Personal__c = 'Libre';
+        update oPersonal;
+
+        PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+        PagewId.getParameters().put('Clinica',oEPaciente.Clinica__r.Name);
+        PagewId.getParameters().put('Consultorio',oEPaciente.Consultorio__c);
+        PagewId.setRedirect(true);
+        return PagewId;
+    }
+
+    public PageReference Guardar(){
+
+      // <<< Obtiene la Etapa Paciente actual
+        //System.debug('fnGuardar idEtapa_ctr: '+idEtapa_ctr);
+        for(Etapa_Paciente__c oP : [SELECT id,Personal__c,Personal__r.Rango__c,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                                    Visita__c,Clinica__c,Flujo__c,Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                                    Configuracion_Flujo__r.Continuar_con_paciente__c,Stamp_Inicio_Dilatacion__c
+                                    FROM Etapa_Paciente__c
+                                    WHERE id= :idEtapa_ctr]){
+                                        oEPaciente = oP;
+                                    }
+      // Obtiene la Etapa Paciente actual >>>
+
+      Boolean pasaOptica = false;
+      // <<< Agrega plan de salud, care plan, y estimacion para optica si estan en REFRACCION
+        if((objConsulta.Diagnostico_refractivo_OD__c != null || objConsulta.Diagnostico_refractivo_OI__c != null) && oEPaciente.Etapa__c == 'Refracción'){
+            if(objConsulta.Capacidad_visual_OD__c == '20/20' || objConsulta.Capacidad_visual_OD__c == '20/25' || objConsulta.Capacidad_visual_OD__c == '20/30' ||
+               objConsulta.Capacidad_visual_OI__c == '20/20' || objConsulta.Capacidad_visual_OI__c == '20/25' || objConsulta.Capacidad_visual_OI__c == '20/30'){
+                   Plan_de_Salud__c planSalud;
+                   try{
+                       planSalud = [SELECT id,Name, Paciente__c,Fecha_Consulta__c, Numero_Exp__c, Nombre_Dr_CD__c, Nombre_del_Dr__c,
+                                    T_cnica_a_realizar__c, Referencia_Correcta__c, Caso_Asignado__c, Observaciones__c
+                                    FROM Plan_de_Salud__c WHERE Paciente__c = :oEPaciente.Paciente__c ];
+                   }catch(exception e){
+                       //System.debug('No habia plan de salud');
+                   }
+                   if(planSalud == null){
+                       planSalud = new Plan_de_Salud__c();
+                       planSalud.Paciente__c          = oEPaciente.Paciente__c;
+                       planSalud.Fecha_Elaboracion__c = Date.today();
+                       planSalud.Name                 = 'Plan de salud';
+                       insert planSalud;
+                       //System.debug('se ha insertado un plan de saludd');
+                   }
+
+                   EHR_Care_Plan_Template_SU__c plantillaSeguroMedico = new EHR_Care_Plan_Template_SU__c();
+                   plantillaSeguroMedico = [SELECT id, Name
+                                            FROM EHR_Care_Plan_Template_SU__c
+                                            WHERE Name LIKE 'Óptica' LIMIT 1];
+
+                  // Selecciona el ojo al que se le va a insetar el tratamiento
+                  // <<< Busca si existe care plant, si no existe lo inserta
+                    EHR_Care_Plan_SU__c carePlan = new EHR_Care_Plan_SU__c();
+                    try{
+                      carePlan = [SELECT id
+                                  FROM EHR_Care_Plan_SU__c
+                                  WHERE Plan_de_Salud__c = :planSalud.id
+                                  AND Plantilla_de_Seguro_Medico__c = :plantillaSeguroMedico.id
+                                  AND Paciente__c = :oEPaciente.Paciente__c];
+                    }catch(exception e){
+                    }
+
+                    if(carePlan != null){
+                      if(objConsulta.Diagnostico_refractivo_OD__c != null && objConsulta.Diagnostico_refractivo_OI__c != null){
+                        carePlan.Ojo__c      = 'AO';
+                      } else if(objConsulta.Diagnostico_refractivo_OD__c != null) {
+                        carePlan.Ojo__c      = 'OD';
+                      } else {
+                        carePlan.Ojo__c      = 'OI';
+                      }
+
+                     carePlan.Paciente__c                   = oEPaciente.Paciente__c;
+                     carePlan.Plan_de_Salud__c              = planSalud.id;
+                     carePlan.Fecha_Elaboracion__c          = Date.today();
+                     carePlan.Plantilla_de_Seguro_Medico__c = plantillaSeguroMedico.id;
+
+                    if(oEPaciente.Configuracion_Flujo__r.Etapas_Precedentes__c == 'Examinación'){
+                      carePlan.Estado__c = 'En Espera';
+                    } else {
+                      if(oEPaciente.Personal__r.Rango__c == 'Senior'){
+                        carePlan.Estado__c         = 'En Proceso';
+                        carePlan.Autorizado_por__c = oEPaciente.Personal__c;
+                      }else{
+                        carePlan.Estado__c = 'Por Autorizar';
+                      }
+                    }
+
+
+                     carePlan.Creado_x__c = oEPaciente.Personal__c;
+                     upsert carePlan; // Inserta tratamiento
+                  }
+                  // Busca si existe care plant, si no existe lo inserta >>>
+                   setdiagnosticos();
+
+                  //System.debug('Proxima etapa: '+oEPaciente.Configuracion_Flujo__r.Etapas_Precedentes__c);
+                  //Se crea la estimación asociada, no lo separo en una funcion puesto que solo se va a crear una estimacion de optica
+                  if(oEPaciente.Configuracion_Flujo__r.Etapas_Precedentes__c != 'Examinación'){
+                      Opportunity opp         = new Opportunity();
+                      RecordType tipoReg      = new RecordType();
+                      Pricebook2 listaPrecios = new Pricebook2();
+                      Visita__c visita        = new Visita__c();
+                      Almacen__c almacen      = new Almacen__c();
+                      tipoReg = [SELECT Id,Name, SobjectType, IsActive, IsPersonType FROM RecordType
+                                WHERE IsActive=true AND Name like 'Optica' LIMIT 1];
+                      if(!test.isRunningTest()){
+                          listaPrecios=[SELECT Id, Name, Id_Netsuite__c, Isstandard FROM PriceBook2
+                                        WHERE Isstandard =true LIMIT 1];
+                      }
+                      visita = [SELECT id, name, Paciente__c, Paciente__r.Campana__c,
+                                      Clinica__c, Paciente__r.Unidad_de_negocio__c
+                              FROM Visita__c
+                              WHERE id=:oEPaciente.Visita__c];
+                      almacen = [SELECT Id, Name
+                                FROM Almacen__c
+                                WHERE Clinica__c=:visita.Clinica__c limit 1];
+                      //system.debug('Visita es '+visita);
+
+                      Opp.PriceBook2id         = listaPrecios.id;
+                      Opp.RecordTypeId         = tipoReg.id;
+                      Opp.CloseDate            = Date.today().addMonths(3);
+                      Opp.Busca_Visita__c      = visita.id;
+                      Opp.BuscaClinica__c      = visita.Clinica__c;
+                      Opp.Almacen__c           = almacen.id;
+                      Opp.Unidad_de_negocio__c = visita.Paciente__r.Unidad_de_negocio__c;
+                      Opp.CampaignId           = visita.Paciente__r.Campana__c;
+                      Opp.AccountId            = visita.Paciente__c;
+                      opp.StageName            = 'Potencial Arranque';
+                      Opp.Name                 = 'Nombre de la estimacion';
+                      Opp.EHR_Care_Plan_SU__c  = carePlan.id;
+                      insert Opp; // Inseta estimacion
+                    pasaOptica     = true;
+                  }
+                   seEjecutoAntes = true;
+                   //System.debug('Opp insertada'+Opp);
+
+                   //Se van a ligar los diagnosticos que se insertaron previamente con el tratamiento
+                   List<EHR_Condition_SU__c> diagnosticosSinTratamiento=new List<EHR_Condition_SU__c>();
+                   try{
+                   diagnosticosSinTratamiento=[SELECT id FROM EHR_Condition_SU__c
+                                              WHERE Paciente__c = :oEPaciente.Paciente__c
+                                              AND EHR_Care_Plan_SU__c = null
+                                              AND createdDate = TODAY
+                                              AND EHR_Diagnostico_Template__r.Care_Plan_Template__r.Name
+                                              LIKE 'Óptica' ];
+                       for(EHR_Condition_SU__c i:diagnosticosSinTratamiento){
+                           i.EHR_Care_Plan_SU__c=carePlan.id;
+                       }
+                       update diagnosticosSinTratamiento;
+                   }catch(Exception e){
+
+                   }
+
+               }
+        }
+      // Agrega plan de salud, care plan, y estimacion para optica >>>
+
+      lEtapas = new list<string>();
+      if(oEPaciente.Etapas_Obligadas__c != null)
+          lEtapas.addall(oEPaciente.Etapas_Obligadas__c.split(';'));
+
+      // <<< Valida si existe registro, si no lo crea, dependiendo el formulario
+      if(oEPaciente.Etapa__c == 'Examinación' || oEPaciente.Etapa__c == 'Refracción' || oEPaciente.Etapa__c == 'Preparación'){
+          objConsulta.Paciente__c           = oEPaciente.Paciente__c;
+          objConsulta.Visita__c             = oEPaciente.Visita__c;
+          Campos_de_Guardado__c GuardaCampo = Campos_de_Guardado__c.getInstance(oEPaciente.Etapa__c);
+          //System.debug('GuardaCampo'+GuardaCampo);
+          //System.debug('oEPaciente'+oEPaciente);
+          //System.debug('objConsulta'+objConsulta);
+          LlenarDatos(objConsulta,GuardaCampo.Campos__c,oEPaciente.Personal__c);
+          if(objConsulta.Id == null){
+              // Genera un duplicado de Examinacion
+              for(EHR_Consulta__c consAnt : [SELECT
+                                             Fotomotor_OD__c,Fotomotor_OI__c,Consensual_OD__c,Consensual_OI__c,
+                                             Motomotor_OD__c,Motomotor_OI__c,Parpados_OD__c,Parpados_OI__c,
+                                             V_a_lagrimal_OD__c,V_a_lagrimal_OI__c,Conjuntiva_OD__c,Conjuntiva_OI__c,
+                                             Cornea_OD__c,Cornea_OI__c,C_mara_anterior_OD__c,C_mara_anterior_OI__c,
+                                             Gonioscop_a_OD__c,Gonioscopia_OI__c,Iris_OD__c,Iris_OI__c,
+                                             Cristalino_OD__c,Cristalino_OI__c,NO_OD__c,NO_OI__c,NC_OD__c,NC_OI__c,
+                                             C_OD__c,C_OI__c,P_OD__c,P_OI__c,Vitreo_OD__c,Vitreo_OI__c,
+                                             Excavaci_n_OD__c,Excavaci_n_OI__c,Papila_OD__c,Papila_OI__c,
+                                             Macula_OD__c,Macula_OI__c,Retina_OD__c,Retina_OI__c,
+                                             Otros_Hallazgos_OI__c, Otros_Hallazgos_OD__c, PIO_OD_Examinacion__c,
+                                             PIO_OI_Examinacion__c, Aparato_para_tomar_PIO__c, Posicion_Primaria_de_la_Mirada_OD__c,
+                                             Posicion_Primaria_de_la_Mirada_OI__c, Medicion_del_angulo_de_desviacion_OD__c,
+                                             Medicion_del_angulo_de_desviacion_OI__c, Defecto_pupilar_aferente_relativo_OD__c,
+                                             Defecto_pupilar_aferente_relativo_OI__c, Plan_de_tratamiento__c, Motivo_de_consulta_Medico__c,
+                                             Dilatar_proxima_consulta__c, Refractar_proxima_consulta__c, Refraccion_dilatacion__c
+                                             FROM EHR_Consulta__c
+                                             WHERE Paciente__c = :oEPaciente.Paciente__c
+                                             ORDER BY CreatedDate DESC
+                                             LIMIT 1]){
+                                                objConsulta.Dilatar_proxima_consulta__c             = consAnt.Dilatar_proxima_consulta__c;
+                                                if(objConsulta.Dilatar_proxima_consulta__c == true){
+                                                  objConsulta.Refraccion_dilatacion__c = true;
+                                                }
+                                                objConsulta.Refractar_proxima_consulta__c           = consAnt.Refractar_proxima_consulta__c;
+                                                objConsulta.Fotomotor_OD__c                         = consAnt.Fotomotor_OD__c;
+                                                objConsulta.Fotomotor_OI__c                         = consAnt.Fotomotor_OI__c;
+                                                objConsulta.Consensual_OD__c                        = consAnt.Consensual_OD__c;
+                                                objConsulta.Consensual_OI__c                        = consAnt.Consensual_OI__c;
+                                                objConsulta.Motomotor_OD__c                         = consAnt.Motomotor_OD__c;
+                                                objConsulta.Motomotor_OI__c                         = consAnt.Motomotor_OI__c;
+                                                objConsulta.Parpados_OD__c                          = consAnt.Parpados_OD__c;
+                                                objConsulta.Parpados_OI__c                          = consAnt.Parpados_OI__c;
+                                                objConsulta.V_a_lagrimal_OD__c                      = consAnt.V_a_lagrimal_OD__c;
+                                                objConsulta.V_a_lagrimal_OI__c                      = consAnt.V_a_lagrimal_OI__c;
+                                                objConsulta.Conjuntiva_OD__c                        = consAnt.Conjuntiva_OD__c;
+                                                objConsulta.Conjuntiva_OI__c                        = consAnt.Conjuntiva_OI__c;
+                                                objConsulta.Cornea_OD__c                            = consAnt.Cornea_OD__c;
+                                                objConsulta.Cornea_OI__c                            = consAnt.Cornea_OI__c;
+                                                objConsulta.C_mara_anterior_OD__c                   = consAnt.C_mara_anterior_OD__c;
+                                                objConsulta.C_mara_anterior_OI__c                   = consAnt.C_mara_anterior_OI__c;
+                                                objConsulta.Gonioscop_a_OD__c                       = consAnt.Gonioscop_a_OD__c;
+                                                objConsulta.Gonioscopia_OI__c                       = consAnt.Gonioscopia_OI__c;
+                                                objConsulta.Iris_OD__c                              = consAnt.Iris_OD__c;
+                                                objConsulta.Iris_OI__c                              = consAnt.Iris_OI__c;
+                                                objConsulta.Cristalino_OD__c                        = consAnt.Cristalino_OD__c;
+                                                objConsulta.Cristalino_OI__c                        = consAnt.Cristalino_OI__c;
+                                                objConsulta.NO_OD__c                                = consAnt.NO_OD__c;
+                                                objConsulta.NO_OI__c                                = consAnt.NO_OI__c;
+                                                objConsulta.NC_OD__c                                = consAnt.NC_OD__c;
+                                                objConsulta.NC_OI__c                                = consAnt.NC_OI__c;
+                                                objConsulta.C_OD__c                                 = consAnt.C_OD__c;
+                                                objConsulta.C_OI__c                                 = consAnt.C_OI__c;
+                                                objConsulta.P_OD__c                                 = consAnt.P_OD__c;
+                                                objConsulta.P_OI__c                                 = consAnt.P_OI__c;
+                                                objConsulta.Vitreo_OD__c                            = consAnt.Vitreo_OD__c;
+                                                objConsulta.Vitreo_OI__c                            = consAnt.Vitreo_OI__c;
+                                                objConsulta.Excavaci_n_OD__c                        = consAnt.Excavaci_n_OD__c;
+                                                objConsulta.Excavaci_n_OI__c                        = consAnt.Excavaci_n_OI__c;
+                                                objConsulta.Papila_OD__c                            = consAnt.Papila_OD__c;
+                                                objConsulta.Papila_OI__c                            = consAnt.Papila_OI__c;
+                                                objConsulta.Macula_OD__c                            = consAnt.Macula_OD__c;
+                                                objConsulta.Macula_OI__c                            = consAnt.Macula_OI__c;
+                                                objConsulta.Retina_OD__c                            = consAnt.Retina_OD__c;
+                                                objConsulta.Retina_OI__c                            = consAnt.Retina_OI__c;
+                                                objConsulta.Otros_Hallazgos_OI__c                   = consAnt.Otros_Hallazgos_OI__c;
+                                                objConsulta.Otros_Hallazgos_OD__c                   = consAnt.Otros_Hallazgos_OD__c;
+                                                objConsulta.PIO_OD_Examinacion__c                   = consAnt.PIO_OD_Examinacion__c;
+                                                objConsulta.PIO_OI_Examinacion__c                   = consAnt.PIO_OI_Examinacion__c;
+                                                objConsulta.Aparato_para_tomar_PIO__c               = consAnt.Aparato_para_tomar_PIO__c;
+                                                objConsulta.Posicion_Primaria_de_la_Mirada_OD__c    = consAnt.Posicion_Primaria_de_la_Mirada_OD__c;
+                                                objConsulta.Posicion_Primaria_de_la_Mirada_OI__c    = consAnt.Posicion_Primaria_de_la_Mirada_OI__c;
+                                                objConsulta.Medicion_del_angulo_de_desviacion_OD__c = consAnt.Medicion_del_angulo_de_desviacion_OD__c;
+                                                objConsulta.Medicion_del_angulo_de_desviacion_OI__c = consAnt.Medicion_del_angulo_de_desviacion_OI__c;
+                                                objConsulta.Defecto_pupilar_aferente_relativo_OD__c = consAnt.Defecto_pupilar_aferente_relativo_OD__c;
+                                                objConsulta.Defecto_pupilar_aferente_relativo_OI__c = consAnt.Defecto_pupilar_aferente_relativo_OI__c;
+                                                objConsulta.Plan_de_tratamiento__c                  = consAnt.Plan_de_tratamiento__c;
+                                                objConsulta.Motivo_de_consulta_Medico__c            = consAnt.Motivo_de_consulta_Medico__c;
+                                             }
+              insert objConsulta;
+          }else{
+              update objConsulta;
+          }
+      }
+
+      // <<< Cambia registros de Etapa y Bitacora
+        // Cambia status de Etapa Paciente
+          oEPaciente.Stamp_Fin_Atencion__c = datetime.now();
+          oEPaciente.Estatus__c            = 'Atendido';
+          update oEPaciente;
+        // Actualiza el estatus del personal si es diferente de Atendido
+          if(oPersonal.Estatus_Personal__c == 'Atendiendo')
+              oPersonal.Estatus_Personal__c = 'Libre';
+          update oPersonal;
+        // Inserta Bitacora
+          setBitacora(oEPaciente, oPersonal);
+      // Cambia registros de Etapa y Bitacora >>>
+
+      return continuar(pasaOptica,false, false, false); // pasaOptica, pasaConsejeria, pasaProgramacion, esPlanTratamiento
+
+    }
+
+    public void setBitacora(Etapa_Paciente__c etapaPx, Personal__c personal){
+      Bitacora_Personal__c oBP = new Bitacora_Personal__c();
+        oBP.Estatus__c     = oPersonal.Estatus_Personal__c;
+        oBP.Fecha__c       = datetime.now();
+        oBP.Hora__c        = oBP.Fecha__c.format('hh:mm a');
+        oBP.Clinica__c     = oEPaciente.Clinica__r.Name;
+        oBP.Consultorio__c = oEPaciente.Consultorio__c;
+        oBP.Personal__c    = oEPaciente.Personal__c;
+
+      if(oEPaciente.Consultorio__c != null){
+        insert oBP;
+      }
+
+    }
+
+    public void setDiagnosticos(){
+        EHR_Consulta__c rowsHallazgos = [SELECT
+                                           Diagnostico_refractivo_OD__c,Diagnostico_refractivo_OI__c,Parpados_OD__c,Parpados_OI__c,
+                                           V_a_lagrimal_OD__c,V_a_lagrimal_OI__c,Conjuntiva_OD__c,Conjuntiva_OI__c,C_mara_anterior_OD__c,
+                                           C_mara_anterior_OI__c,Cornea_OD__c,Cornea_OI__c,Excavaci_n_OD__c,Excavaci_n_OI__c,
+                                           Gonioscop_a_OD__c,Gonioscopia_OI__c,Iris_OD__c,Iris_OI__c,Macula_OD__c,Macula_OI__c,
+                                           Papila_OD__c,Papila_OI__c,Retina_OD__c,Retina_OI__c,Vitreo_OD__c,Vitreo_OI__c,
+                                           Cristalino_OD__c,Cristalino_OI__c,Defecto_pupilar_aferente_relativo_OD__c, Defecto_pupilar_aferente_relativo_OI__c,
+                                           Posicion_Primaria_de_la_Mirada_OD__c, Posicion_Primaria_de_la_Mirada_OI__c,
+                                           Medicion_del_angulo_de_desviacion_OD__c, Medicion_del_angulo_de_desviacion_OI__c
+                                         FROM EHR_Consulta__c
+                                         WHERE Id = :objConsulta.Id];
+        System.debug('[1:setDiagnosticos] rowsHallazgos:' + rowsHallazgos);
+
+        // Convierte SOQL a String
+        String HallazgosJSON = JSON.serialize(rowsHallazgos);
+
+        // Convierte String a Json
+        JSONParser parser = JSON.createParser(HallazgosJSON);
+
+        id idPX;
+        Integer countDiagnosticos = 0;
+        idPX = idPaciente_ctr;
+        List<EHR_Condition_SU__c> listDiagnosticos = new List<EHR_Condition_SU__c>();
+        while (parser.nextToken() != null) { // Entra al Json Encabezado
+            parser.nextToken();
+            parser.nextToken();
+
+            while (parser.nextToken() != null) { // Entra al Body del Json
+                parser.nextValue();
+
+                String NameApi  = parser.getCurrentName();
+                String ValueApi = parser.getText();
+
+                if(NameApi != 'url'){
+                    if(ValueApi != null){
+                        String ojo = '';
+
+                        if(NameApi.contains('_OD_')){
+                            ojo = 'OD';
+                        } else if(NameApi.contains('_OI_')){
+                            ojo = 'OI';
+                        }
+                        //system.debug('-- Funcion Contains: ' +NameApi +' - '+ NameApi.contains('_OD_') + ' Ojo: '+ojo);
+
+                        if(ojo != ''){
+                            for(string hallazgo : ValueApi.split(';')){ // Separa hallazgos
+
+                                if(hallazgo != 'Normales' || hallazgo != 'Transparente' || hallazgo != 'Sin alteraciones' || hallazgo != 'Permeable' || hallazgo != 'Aplicada' || hallazgo != 'No valorable'){
+
+                                    if(hallazgo != 'EHR_Consulta__c' || hallazgo != null){ // si es un hallazgo
+                                        // Burca en catalogo
+                                        for(EHR_Hallazgo_Template__c objHallazgoTpl : [SELECT id, Name, EHR_Diagnostico_Template__c, Ambos_Ojos__c
+                                                                                       FROM EHR_Hallazgo_Template__c
+                                                                                       WHERE Name = :hallazgo
+                                                                                       LIMIT 1]){
+
+                                          if(objHallazgoTpl.EHR_Diagnostico_Template__c != null){
+                                                   // Valida que el Diagnostico exista
+                                                   countDiagnosticos = [SELECT id
+                                                                        FROM EHR_Condition_SU__c
+                                                                        WHERE Ojo__c = :ojo
+                                                                        AND Paciente__c = :idPX
+                                                                        AND EHR_Diagnostico_Template__c = :objHallazgoTpl.EHR_Diagnostico_Template__c].size();
+
+                                              if(countDiagnosticos == 0){ // no se encontraron Duplicados
+                                                   EHR_Condition_SU__c objDiagnostico = new EHR_Condition_SU__c();
+                                                   objDiagnostico.Ojo__c      = ojo;
+                                                   objDiagnostico.Paciente__c = idPX;
+                                                   objDiagnostico.Consulta__c = objConsulta.Id;
+                                                   objDiagnostico.Personal__c = oEPaciente.Personal__c;
+                                                   objDiagnostico.EHR_Diagnostico_Template__c = objHallazgoTpl.EHR_Diagnostico_Template__c;
+                                                   listDiagnosticos.add(objDiagnostico);
+                                              }
+                                          }
+                                      }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //system.debug('-- LISTADIAGNOSTICO -- '+listDiagnosticos);
+        if(listDiagnosticos != null){
+            insert listDiagnosticos;
+        }
+    }
+
+    public PageReference Continuar(Boolean pasaOptica, Boolean pasaConsejeria, Boolean pasaProgramacion, Boolean esPlanTratamiento){
+
+        System.debug('pasaConsejeria: '+pasaConsejeria+' pasaOptica: '+ pasaOptica+' pasaProgramacion: '+ pasaProgramacion);
+        Boolean etapasObligadas = false;
+        if(oEPaciente.Etapa__c == 'Examinación' || (oEPaciente.Etapa__c == 'Refracción')){
+        //if(oEPaciente.Etapa__c == 'Examinación'||(oEPaciente.Etapa__c == 'Refracción'&&!seEjecutoAntes)){
+            setDiagnosticos();
+        }
+
+        // Si esta en examinacion ir a plan de Salud
+        if(oEPaciente.Etapa__c == 'Examinación' && esPlanTratamiento == false){
+            PageReference PagewId = new PageReference('/apex/EHR_PlanTratamiento');
+            PagewId.getParameters().put('IdEtapa',idEtapa_ctr);
+            PagewId.setRedirect(true);
+            return PagewId;
+        } else {
+            set<string> sEtapas = new set<string>();
+            // genera url de redireccion a Lista de espera
+            PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+            PagewId.getParameters().put('Clinica',oEPaciente.Clinica__r.Name);
+            PagewId.getParameters().put('Consultorio',oEPaciente.Consultorio__c);
+            PagewId.setRedirect(true);
+
+            px_parametros__c confParametrosPx = px_parametros__c.getOrgDefaults();
+            // Hereda solo las etapas precedentes de la configuracion por que no existen etapas que heredar de Etapas Pacientes
+            if(pasaProgramacion == true || pasaOptica == true || pasaConsejeria == true || lEtapas.isEmpty() == false){
+                // Si se detecto urgencia y esta en preparacion envia directamente a Examinacion
+                String EtapaSearch = '';
+                if(!lEtapas.isEmpty()){
+                  EtapaSearch = lEtapas.get(0);
+                }
+
+                if(objConsulta.Urgencia__c == true && oEPaciente.Etapa__c == 'Preparación'){
+                    oEPaciente.Flujo__c = confParametrosPx.Id_Consulta_Oftalmologo__c;
+                    EtapaSearch         = 'Examinación';
+                }
+
+                // Si se detecto que el paciente tiene que pasar con Oftalmologo, pasar a Examinacion
+                if(objConsulta.Px_pasa_con_Oftalmologo__c == 'Si' && oEPaciente.Etapa__c == 'Refracción'){
+                    oEPaciente.Flujo__c = confParametrosPx.Id_Consulta_Oftalmologo__c;
+                    EtapaSearch         = 'Examinación';
+                }
+
+                // Si esta en examinacion y su Agudeza Visual es diferente a 20/20 o 20/30 paciente pasa a Optica y se genera Estimacion.
+                // <<< Valida si tiene que pasar a Optica y Consejeria
+                    if(EtapaSearch == ''){
+                        if(pasaConsejeria == true) {
+                           EtapaSearch = 'Consejeria';
+                        } else if(pasaConsejeria == false && pasaOptica == true){
+                            EtapaSearch = 'Optica';
+                        } else if(pasaProgramacion == true){
+                            EtapaSearch = 'Programación';
+                        }
+                    }
+                // Valida si tiene que pasar a Optica >>>
+
+                System.debug('(0) EtapaSearch: '+EtapaSearch);
+                // Sigue el Flujo Normal
+                for(Configuracion_Flujo__c oC : [SELECT Id,Puestos__c,Etapa__c, Etapas_Precedentes__c,Especialidad__c,Pagina_a_Cargar__c
+                                                   FROM Configuracion_Flujo__c
+                                                   WHERE Servicio__c = :oEPaciente.Flujo__c
+                                                   AND Etapa__c = :EtapaSearch]){
+
+                                                Etapa_Paciente__c oEP      = new Etapa_Paciente__c();
+                                                oEP.Visita__c              = oEPaciente.Visita__c;
+                                                oEP.Clinica__c             = oEPaciente.Clinica__c;
+                                                oEP.Flujo__c               = oEPaciente.Flujo__c;
+                                                oEP.Configuracion_Flujo__c = oC.Id;
+
+                                                if(objConsulta.Refraccion_dilatacion__c && EtapaSearch == 'Examinación'){
+                                                    oEP.Estatus__c                 = 'Dilatación';
+                                                    oEP.Stamp_Inicio_Dilatacion__c = datetime.now();
+                                                }else{
+                                                    oEP.Estatus__c = 'En Espera';
+                                                }
+
+                                                if(oEPaciente.Configuracion_Flujo__r.Continuar_con_paciente__c){
+                                                    if(oPersonal.Etapas__c.contains(EtapaSearch)){
+                                                       PagewId = new PageReference('/apex/'+oC.Pagina_a_Cargar__c);
+                                                       oEP.Estatus__c               = 'En Atención';
+                                                       oEP.Stamp_Inicio_Atencion__c = datetime.now();
+                                                       oEP.Hora_Atencion__c         = oEP.Stamp_Inicio_Atencion__c.format('hh:mm a');
+                                                       oEP.Personal__c              = oEPaciente.Personal__c;
+                                                       oEP.Consultorio__c           = oEPaciente.Consultorio__c;
+                                                       oEP.Primero_en_Fila__c       = false;
+                                                    }
+                                                }
+
+                                                oEP.Etapa__c         = oC.Etapa__c;
+                                                oEP.Puestos__c       = oC.Puestos__c;
+                                                oEP.Paciente__c      = oEPaciente.Paciente__c;
+                                                oEP.Especialidad__c  = oC.Especialidad__c;
+                                                oEP.Stamp_Llegada__c = Datetime.now();
+                                                oEP.Hora_LLegada__c  = oEP.Stamp_Llegada__c.format('hh:mm a');
+
+                                                    if(objConsulta.Urgencia__c == true && oEPaciente.Etapa__c == 'Preparación'){
+                                                       oEP.Urgente__c = true;
+                                                    }
+
+                                                    oEP.Etapas_Obligadas__c = oC.Etapas_Precedentes__c;
+
+                                                    // <<< Valida cual va a ser la siguiente etapa a la que tiene que pasar
+                                                        if(EtapaSearch != 'Consejeria' && pasaConsejeria == true && pasaOptica == true){
+                                                          oEP.Etapas_Obligadas__c = 'Consejeria;Optica';
+                                                        } else if(pasaConsejeria == true && EtapaSearch != 'Consejeria' && pasaOptica == false){
+                                                          oEP.Etapas_Obligadas__c = 'Consejeria';
+                                                        } else if(pasaOptica == true && EtapaSearch != 'Optica'){
+                                                          oEP.Etapas_Obligadas__c = 'Optica';
+                                                        }
+                                                        if(EtapaSearch != 'Programación' && pasaProgramacion == true){
+                                                          oEP.Etapas_Obligadas__c = 'Programación';
+                                                        }
+                                                    // Valida cual va a ser la siguiente etapa a la que tiene que pasar
+
+                                                   integer iPx=[SELECT Id
+                                                                FROM Etapa_Paciente__c
+                                                                WHERE Estatus__c = 'En Espera'
+                                                                AND Clinica__c = :oEP.Clinica__c
+                                                                AND Etapa__c   = :oEP.Etapa__c
+                                                                AND Stamp_Llegada__c = TODAY].size();
+
+                                                   //system.debug('iPx: '+iPx);
+                                                   if(iPx == 0){
+                                                       oEP.Primero_en_Fila__c = true;
+                                                   }
+
+                                                  if(!lEtapas.isEmpty()){
+                                                    lEtapas.remove(0);
+                                                    for(string sEh: lEtapas){
+                                                      if(oEP.Etapas_Obligadas__c == '' || oEP.Etapas_Obligadas__c == null){
+                                                        oEP.Etapas_Obligadas__c = sEh;
+                                                          system.debug('(3) Etapas Obligadas: '+ oEP.Etapas_Obligadas__c);
+                                                      }else{
+                                                        if(!oEP.Etapas_Obligadas__c.contains(sEh.deleteWhitespace())) {
+                                                          oEP.Etapas_Obligadas__c += ';'+sEh;
+                                                            system.debug('(4) Etapas Obligadas: '+ oEP.Etapas_Obligadas__c);
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                   system.debug('(5) Etapas Obligadas: '+ oEP.Etapas_Obligadas__c);
+                                                   insert oEP;
+                                                   if(oEP.Estatus__c == 'En Atención'){
+                                                       PagewId.getParameters().put('IdEtapa',oEP.Id);
+                                                       PagewId.setRedirect(true);
+                                                   }
+                                                   return PagewId;
+                                               }
+            }
+
+            system.debug('entro a finalizar flujo');
+            // Finaliza el Flujo de los pacientes
+            Etapa_Paciente__c oEP        = new Etapa_Paciente__c();
+            oEP.Visita__c                = oEPaciente.Visita__c;
+            oEP.Clinica__c               = oEPaciente.Clinica__c;
+            oEP.Flujo__c                 = oEPaciente.Flujo__c;
+            oEP.Personal__c              = oEPaciente.Personal__c;
+            oEP.Estatus__c               = 'Fin';
+            oEP.Etapa__c                 = 'Finalizado';
+            oEP.Paciente__c              = oEPaciente.Paciente__c;
+            oEP.Stamp_Llegada__c         = Datetime.now();
+            oEP.Hora_LLegada__c          = oEP.Stamp_Llegada__c.format('hh:mm a');
+            oEP.Stamp_Inicio_Atencion__c = Datetime.now();
+            oEP.Stamp_Fin_Atencion__c    = Datetime.now();
+            oEP.Consultorio__c           = oEPaciente.Consultorio__c;
+            insert oEP;
+            //system.debug('Finalizado: ');
+            return PagewId;
+        }
+    }
+
+    public void LlenarDatos(sObject Objeto, String Campos, String Valor){
+        Objeto.put(Campos.split(',').get(0),Valor);
+        Objeto.put(Campos.split(',').get(1),datetime.now());
+    }
+
+    public PageReference Abandono(){
+        PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+        PagewId.getParameters().put('Clinica',oEPaciente.Clinica__r.Name);
+        PagewId.getParameters().put('Consultorio',oEPaciente.Consultorio__c);
+        PagewId.setRedirect(true);
+        // Modifica Etapa Paciente
+          oEPaciente.Estatus__c               = 'Abandono';
+          oEPaciente.Stamp_Inicio_Atencion__c = null;
+          update oEPaciente;
+        // Modifica status de Personal
+          if(oPersonal.Estatus_Personal__c == 'Atendiendo')
+              oPersonal.Estatus_Personal__c = 'Libre';
+          update oPersonal;
+        return PagewId;
+    }
+
+    public PageReference Dilatacion(){
+        if(objConsulta.Id == null)
+            insert objConsulta;
+        else
+            update objConsulta;
+
+        PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPaciente.Personal__c);
+        PagewId.getParameters().put('Clinica',oEPaciente.Clinica__r.Name);
+        PagewId.getParameters().put('Consultorio',oEPaciente.Consultorio__c);
+        PagewId.setRedirect(true);
+        oEPaciente.Estatus__c               = 'Dilatación';
+        oEPaciente.Stamp_Inicio_Atencion__c = null;
+        oEPaciente.Stamp_Inicio_Dilatacion__c = datetime.now();
+        update oEPaciente;
+        return PagewId;
+    }
+}

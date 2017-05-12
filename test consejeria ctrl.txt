@@ -1,0 +1,35 @@
+@isTest
+public class TestConsejeriaCtrl {
+    
+    
+    
+    static testMethod void TestTratamientosCtrl1(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+         px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ConsejeriaController tr = new ConsejeriaController();
+       // tr.funcdum();
+        tr.funcionActualizaEstimacion();
+        tr.GoToEstimacion();
+        tr.actualizaOportunidades();
+        tr.funcionActualizaValorCirugia();
+        System.debug('oportunidadVisual'+tr.oportunidadVisual);
+        tr.tratamientoPaginaExterna='Chalazion uno';
+        tr.ojoPaginaExterna='AO';
+        tr.abreEstimacion();
+        tr.funcionActualizaEstimacion();
+        tr.asignaURLPDF();
+        tr.GuardarConsejeriaSave();
+        tr.AbandonoConsejeria();
+        tr.RegresarEtapaAnterior();
+        
+        
+    }
+}

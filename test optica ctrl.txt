@@ -1,0 +1,27 @@
+@isTest
+public class TestOpticaCtrl {
+
+    static testMethod void TestTratamientosCtrl1(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsOptica.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        OpticaController tr = new OpticaController();
+        tr.funcdum();
+        tr.funcionGenial();
+        tr.GoToEstimacion();
+        tr.actualizaOportunidades();
+        System.debug('oportunidadVisual'+tr.oportunidadVisual);
+        tr.tratamientoPaginaExterna='Chalazion uno';
+        tr.ojoPaginaExterna='AO';
+        tr.abreEstimacion();
+        tr.funcionActualizaEstimacion();
+        tr.GuardarConsejeriaSave();
+        tr.AbandonoConsejeria();
+        
+        
+    }
+}

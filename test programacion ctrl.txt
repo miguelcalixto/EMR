@@ -1,0 +1,231 @@
+@isTest
+public class TestProgramacionCtrl {
+    static testMethod void TestTratamientosCtrl1(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,false).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        tr.GuardarConsejeria();
+    }
+    static testMethod void TestTratamientosCtrl2(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+            i.problema.Tipo_de_Lente__c='Multifocal/Trifocal';
+        }
+        
+        tr.GuardarConsejeria();
+    }
+    static testMethod void TestTratamientosCtrl3(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+            i.problema.Poder_de_Lente__c=12;
+        }
+        
+        tr.GuardarConsejeria();
+        tr.Abandono();
+    }
+    static testMethod void TestTratamientosCtrl4(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,false).get(0);
+        System.debug('---->'+oEp);
+         
+    px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+  
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+             i.problema.Tipo_de_Lente__c='Multifocal/Trifocal';
+            i.problema.Poder_de_Lente__c=12;
+            i.oportunidad.Fecha_de_Cirugia__c=Date.today();
+            i.cancelada=false;
+        }
+        
+        tr.GuardarConsejeria();
+    }
+    
+    static testMethod void TestTratamientosCtrl5(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,false).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+             i.problema.Tipo_de_Lente__c='Multifocal/Trifocal';
+            i.problema.Poder_de_Lente__c=12;
+            i.oportunidad.Fecha_de_Cirugia__c=Date.today().addDays(50);
+        }
+        
+        tr.GuardarConsejeria();
+    }
+    static testMethod void TestTratamientosCtrl6(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,false).get(0);
+        System.debug('---->'+oEp);
+        px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+             i.problema.Tipo_de_Lente__c='Multifocal/Trifocal';
+            i.problema.Poder_de_Lente__c=12;
+            i.oportunidad.Fecha_de_Cirugia__c=Date.today().addDays(-50);
+        }
+        
+        tr.GuardarConsejeria();
+    }
+    static testMethod void TestTratamientosCtrl7(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+          
+    px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+  
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        for(ControllerProgramacionTres.programacionWrapper i: tr.programacionVisual){
+             i.problema.Tipo_de_Lente__c='Multifocal/Trifocal';
+            i.problema.Poder_de_Lente__c=12;
+            i.oportunidad.Fecha_de_Cirugia__c=Date.today();
+            i.cancelada=true;
+        }
+        
+        tr.GuardarConsejeria();
+    }
+    
+    //Funcion que cubre agregar tratamiento
+    static testMethod void TestTratamientosCtrl8(){
+        
+        
+        Etapa_Paciente__c oEp = TestFunctionsConsejeria.crearEtapaPaciente(1,'Preparación','Chalazion',1,true).get(0);
+        System.debug('---->'+oEp);
+          
+    px_parametros__c Param = new px_parametros__c();
+      param.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos ;Estilo de Vida ;Antecedentes Personales Patologicos; Antecedentes Oftalmologicos;Ant. Oft. Cirugias/Tratamientos; Antecedentes Gineco-obstetricos (15 años O MENOS); Desarrollo Psicomotriz';
+      param.Id_Consulta_Oftalmologo__c = 'a1D21000000Lzdv';
+    insert param;
+  List<EHR_Care_Plan_Template_SU__c> carePlanInsertado=crearTemplate(1,'Miopia');
+        
+        ApexPages.currentPage().getParameters().put('IdEtapa', oEP.Id);
+        //ApexPages.currentPage().getParameters().put('personal', oP.id);
+        ControllerProgramacionTres tr = new ControllerProgramacionTres();
+        system.debug('visual'+tr.programacionVisual);
+        id identificadorEstimacion=tr.programacionVisual.get(0).oportunidad.id;
+        Opportunity opp=ElaboraTipoEstimacion('Farmacia',identificadorEstimacion);
+        insert opp;
+        ControllerProgramacionTres trtr = new ControllerProgramacionTres();
+        system.debug('visual2'+trtr.programacionVisual);
+        for(selectOption i:trtr.tratamientoElegir){
+             trtr.seleccionadoModal=i.getValue();
+        }
+        for(selectOption i:trtr.estimacionesAsociadas){
+            trtr.estimacionElegida=i.getValue();
+        }
+        //trtr.seleccionadoModal=trtr.tratamientoElegir.getValue();
+        trtr.ojoTratamientoElegido='OD';
+       // trtr.estimacionElegida=trtr.estimacionesAsociadas.getValue();
+        trtr.agregaTratamiento();
+        
+    }
+     public static List<EHR_Care_Plan_Template_SU__c> crearTemplate(Integer iNumDeRegistros,String nombreUniversal){
+        List<EHR_Care_Plan_Template_SU__c> lCaraTemplate = new List<EHR_Care_Plan_Template_SU__c>();  
+        for(Integer i = 0 ; i <iNumDeRegistros ; i++){
+            Integer md = math.mod(i, 2);
+            
+            EHR_Care_Plan_Template_SU__c x = new EHR_Care_Plan_Template_SU__c();
+            x.Name =nombreUniversal;
+            x.Subespecialidad__c = 'Glaucoma';
+            
+            
+            //x.Activo__c = true;
+            x.AgendaTX__c = 'Programacion';
+            x.Tipo_CX_TX__c = 'Cirugía';
+            
+            x.Estudios__c='estudio 1;estudio 2';
+            x.Tipo_de_Estimacion__c='Farmacia';
+            lCaraTemplate.add(x);
+        }
+        System.debug('el care plan template su es '+lCaraTemplate);
+        insert lCaraTemplate;
+        return lCaraTemplate;
+    }   
+    public static Opportunity ElaboraTipoEstimacion(String tipo, id estimacion){
+        System.debug('la estimacion es'+estimacion);
+        Opportunity consulta=new Opportunity();
+        consulta=[select id,AccountId,Visita__c  from opportunity where id=:estimacion ];
+        Visita__c visi=new Visita__c();
+        visi=[Select id from Visita__c where Paciente__c = :consulta.AccountId ];
+        System.debug('la consulta es'+consulta);
+        Opportunity opp         = new Opportunity();
+        RecordType tipoReg      = new RecordType();
+        Pricebook2 listaPrecios = new Pricebook2();
+        Visita__c visita        = new Visita__c();
+        Almacen__c almacen      = new Almacen__c();
+        tipoReg = [SELECT Id,Name, SobjectType, IsActive, IsPersonType FROM RecordType
+                   WHERE IsActive=true AND Name like :tipo LIMIT 1];        
+        visita=[SELECT id, name, Paciente__c, Paciente__r.Campana__c,
+                Clinica__c, Paciente__r.Unidad_de_negocio__c FROM Visita__c WHERE id=:visi.id];
+        almacen = [SELECT Id, Name FROM Almacen__c WHERE Clinica__c=:visita.Clinica__c limit 1];
+        system.debug('Visita es '+visita);
+
+        Opp.PriceBook2id         = listaPrecios.id;
+        Opp.RecordTypeId         = tipoReg.id;
+        Opp.CloseDate            = Date.today().addMonths(3);
+        Opp.Busca_Visita__c      = visita.id;
+        Opp.BuscaClinica__c      = visita.Clinica__c;
+        Opp.Almacen__c           = almacen.id;
+        Opp.Unidad_de_negocio__c = visita.Paciente__r.Unidad_de_negocio__c;
+        Opp.CampaignId           = visita.Paciente__r.Campana__c;
+        Opp.AccountId            = visita.Paciente__c;
+
+        if(tipo=='Cirugía Inteligente'){
+            opp.StageName='Estimación Enviada';
+        }else if(tipo=='Optica'||tipo=='Farmacia'){
+            opp.StageName='Potencial Arranque';
+        }else{
+            opp.StageName='Aconsejado';
+        }
+        Opp.Name='Nombre de la estimacion';
+        return Opp;
+    }
+}

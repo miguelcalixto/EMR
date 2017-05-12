@@ -1,0 +1,125 @@
+<apex:page docType="html-5.0" showheader="false" controller="EHR_templateCtrl" >
+  <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <c:CSS_EHR_Forms />
+    <apex:stylesheet value="{!URLFOR($Resource.SLDSSALAUNO, 'assets/styles/salesforce-lightning-design-system-vf.min.css')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jquery214)}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://d3gxy7nm8y4yjr.cloudfront.net/js/embed.js"></script>
+    <script>
+      var j$ = jQuery.noConflict();
+    </script>
+    <!-- Estructura -->
+    <div class="slds" style="background: #39c0cb;">
+      <div class="slds-grid slds-wrap">
+        <!-- Seccion Informacion Paciente -->
+        <div class="slds-col slds-size--1-of-1 slds-small-size--1-of-2 slds-medium-size--1-of-4">
+          <div class="slds-m-around--x-small">
+            <c:EHR_InformacionPaciente px="{!oPaciente}"/>
+          </div>
+        </div>
+        <!-- Seccion Etapa -->
+        <div class="slds-col slds-size--1-of-1 slds-small-size--1-of-2 slds-medium-size--3-of-4">
+          <div class="slds-size--2-of-2">
+            <!-- Seccion Edicion -->
+            <div class="slds-section">
+              <apex:form id="frmConsejeria">
+                                <apex:Pagemessages />
+                                <apex:actionStatus id="statuslistas" onstart="ocultaTodo();" onstop="muestraTodo();" >
+                                    <apex:facet name="start">
+                                        <div class="slds-form--compound slds-grid slds-grid--vertical slds-nowrap" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.75; z-index: 1000; background-color: white;margin-top: 9%;margin-bottom: 20%;">
+                                             
+                                        </div>
+                                        <div style="position: fixed; left: 0; top: 0; bottom: 0; right: 0; z-index: 1001; margin: 10% 50%;">
+                                            <img src="{!URLFOR($Resource.SLDSSALAUNO, 'assets/images/spinners/slds_spinner_brand.gif')}" height="42" width="42"/>
+                                        </div>
+                                    </apex:facet>
+                                </apex:actionStatus>
+                                <!--<c:EHR_Consejeria idEtapa="{!oEPaciente.Id}" idPaciente="{!oPaciente.Id}" />-->
+                                <c:EHR_Optica />
+              </apex:form>
+            </div>
+            <!-- Estructura -->
+            <div class="slds-section">
+                            <c:EHR_HistoricoRegistros idPx="{!oPaciente.Id}" lEtapas="{!oEPaciente.Configuracion_Flujo__r.Etapas_a_ver_de_Historico__c}"/>
+            </div>
+          </div>
+        </div>
+      </div>
+            <div id="ModalAgenda" class="minimizar">
+                <div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal--large" aria-labelledby="header43">
+                    <div class="slds-modal__container">
+                        <div class="slds-modal__header fondo-verde-obscuro">
+                          <h2 class="font-amarillo slds-section__title">Agenda</h2>
+                        </div>
+                        <div class="slds-modal__content slds-p-around--medium">
+                            <iframe src="https://app.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category:Servicios+Privados+%28no+visibles+al+p%C3%BAblico%29" width="100%" height="800" frameBorder="0"/>
+                        </div>
+                        <div class="slds-modal__footer fondo-verde-obscuro">
+                          <span id="CerrarAgenda" class="slds-button slds-button--neutral">Cancelar</span>
+                        </div>
+                      </div>
+                </div>
+                <div class="slds-backdrop slds-backdrop--open"></div>
+           </div>
+            <chatter:feedWithFollowers entityId="{!oPaciente.Id}" showHeader="true"/>
+    </div>
+        <script>
+             $(document).ready(function() {
+                   ActualizaOportunidades();
+                    AgregaEstimacion();
+                 });
+          // <<< Historia Clinica
+            $('.multiSelectPicklistTable').remove();
+            $('.multi-select').show();
+            $('.minimizar').hide();
+
+            $('#ModalHistoriaClinica').removeClass('minimizar');
+            $('#ModalHistoriaClinica').show();
+
+            if($('#body-historico').hasClass('minimizar')){ // si existe eliminala
+                $('#body-historico').hide();
+            } else { // Si no existe agregala
+                $('#body-historico').show();
+            }
+
+            j$('.slds-section__title').find('button').find('svg').css('transition', '0.3s');
+
+            $('#CerrarHistoriaClinica').click(function(){
+                $('#ModalHistoriaClinica').addClass('minimizar');
+                $('#ModalHistoriaClinica').hide();
+            });
+
+            $('#EditarHistoriaClinica').click(function(){
+                if($('#ModalHistoriaClinica').hasClass('minimizar')){
+                    $('#ModalHistoriaClinica').removeClass('minimizar');
+                    $('#ModalHistoriaClinica').show();
+                } else {
+                    $('#ModalHistoriaClinica').addClass('minimizar');
+                    $('#ModalHistoriaClinica').hide();
+                }
+            });
+          // Historia Clinica >>>
+
+
+            j$('.slds-section__title').find('button').find('svg').css('transition', '0.3s');
+
+            /*SLDS Sections*/
+            $('#CerrarAgenda').click(function(){
+                $('#ModalAgenda').addClass('minimizar');
+                $('#ModalAgenda').hide();
+            });
+
+            $('#AgendaCita').click(function(){
+                if($('#ModalAgenda').hasClass('minimizar')){
+                    $('#ModalAgenda').removeClass('minimizar');
+                    $('#ModalAgenda').show();
+                } else {
+                    $('#ModalAgenda').addClass('minimizar');
+                    $('#ModalAgenda').hide();
+                }
+            });
+
+
+        </script>
+  </html>
+</apex:page>

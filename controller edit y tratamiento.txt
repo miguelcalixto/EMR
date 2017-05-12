@@ -1,0 +1,1770 @@
+public class TratamientoControllerDos {
+
+    public Account Acc{get; set;}
+    public Plan_de_Salud__c planSalud{get;set;}
+    public Personal__c personal{get; set;}
+    public Personal__c oPersonal{get;set;} // Erika
+    public Etapa_Paciente__c oEPaciente{get; set;}
+    public Etapa_Paciente__c etapa {get; set;}
+
+    public ID identificador {get; set;}
+    public Set<String> tratamientosConjunto {get; set;}  //Variable que contiene los tratamientos originales
+    public Boolean habiaPlanSalud{get; set;}
+
+    public String ojoActivaCheckList{get; set;}
+    public String activaCheckList{get; set;}
+    public String comentarioEliminaTratamiento{get; set;}
+    public String seleccionadoModal{get; set;}
+    public String seleccionadoModalDiagnostico{get; set;}
+    public String selTratamientoDelete{get; set;}
+    public String ojoSelTratamientoDelete{get; set;}
+    public String ojoSelDiagnosticoDelete{get; set;}
+    public String selDiagnosticoDelete{get; set;}
+    public String claseDinamica{get; set;}
+    public String ojoDiagnosticoElegido{get; set;}
+    public String ojoTratamientoElegido{get; set;}
+    public String indicaModalFormularioTratamiento{get; set;}
+    public String JsonMap{get; set;}
+    public String cualDiagnosticoSeElimina{get; set;} // Puedo usar esta variable para eliminar los diagnosticos cuando se elimina un tratamiento
+    public String tratamientosActivosConfirmacionGuardado{get; set;}//Tratamientos que saldran en el modal para confirmar que se les va a generar una estimacion
+
+
+
+    public List<string> lEtapas{get; set;}
+    public List<EHR_Care_Plan_SU__c> carePlan{get; set;}
+    public List<diagnosticoWrapper> diagnosticoVisual{get; set;}
+    public List<SelectOption> diagnosticoModal{get; set;}
+    public List<SelectOption> pronosticoCarePlan{get; set;}
+    public List<SelectOption> ojoAElegir{get; set;}
+    public List<SelectOption> CxCatarata{get; set;}
+    public List<SelectOption> estudiosTemplate {get; set;}
+    public List<SelectOption> tratamientosModal{get; set;}
+    public List<TratamientoWrapper> tratamientosVisual{get; set;}
+    public Map<String,String> mUrlParam{get; set;}
+    public Map<String,String> diagnosticoTratamiento {get; set;}
+
+    private Set<String> tratamientosConjuntoVisual{get; set;}// Variable que filtra el set cuando se inicia para agregarlos a la lista tratamientos visual
+    private List<TratamientoWrapper> tratamientosVisualCopia{get; set;}
+    private List<EHR_Condition_SU__c> diagnosticoConTratamientoOriginal{get; set;}
+    private List<EHR_Condition_SU__c> diagnosticoSinTratamientoOriginal{get; set;}
+    private List<diagnosticoWrapper> diagnosticoVisualCopia{get; set;}
+    private List<EHR_Care_Plan_SU__c> tratamientoOriginal{get; set;}
+    private List<Opportunity> listaEstimacionesACargar {get; set;}
+    private boolean cuentaConvenioBF{get; set;}
+    private List<String> diagnosticosSeleccionadosAEliminar{get; set;}
+    private List<String> ojosSeleccionadosAEliminar{get; set;}
+      private integer numeroEstimaciones{get; set;}
+    private boolean seHaCreadoEstimacionCampana{get; set;}
+
+    public TratamientoControllerDos(){    /*CONSTRUCTOR*/
+        tratamientosActivosConfirmacionGuardado='';
+        inicializaEstudiosTemplate();
+        inicializaCataraCx();
+        indicaModalFormularioTratamiento='falso';
+        claseDinamica='slds-hide';
+        Acc   = new Account();
+        etapa = new Etapa_Paciente__c();
+        /* prioridad=new List<SelectOption>();
+estados=new LIST<SelectOption>();
+ojos=new List<SelectOption>();*/
+
+
+        mUrlParam = ApexPages.currentPage().getParameters();
+        if(mUrlParam.containsKey('IdEtapa')){
+            imprimir(mUrlParam.get('IdEtapa'));
+        }
+        tratamientosVisual=new List<TratamientoWrapper>();
+        inicializaPronostico();
+        inicializaDatos();
+        inicializaOjos();
+        /*inicializaPrioridades();
+inicializaEstados();
+inicializaOjo();*/
+        inicializaTratamientosEstimaciones();
+        inicializaDiagnosticos();
+        filtraDiagnosticos();
+        construyeWrapper();
+        asignaTratamientos();
+        divideEnListasTratamientos();
+        realizacopia(); //creo esta funcion para copiar mi lista original y poder compararla al final y saber que crear y que no crear
+        limpiaDuplicados();
+        System.debug('FIN DEL CONSTRUCTOR');
+    }
+
+    public void inicializaEstudiosTemplate(){
+        estudiosTemplate=new List<SelectOption>();
+        Schema.DescribeFieldResult EstudiosCx =EHR_Care_Plan_Template_SU__c.Estudios__c.getDescribe();
+        List<Schema.PicklistEntry> plp        = EstudiosCx.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+            //    system.debug('Estudios'+f.getLabel());
+            //   system.debug('Estudios'+f.getValue());
+            //   System.debug('estudios '+f);
+            estudiosTemplate.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+
+    public void  realizacopia(){ //creo esta funcion para copiar mi lista original y poder compararla al final y saber que crear y que no crear
+        tratamientosVisualCopia = new list<TratamientoWrapper>();
+        diagnosticoVisualCopia  = new List<diagnosticoWrapper>();
+        /*tratamientosVisualCopia=tratamientosVisual.deepClone();
+diagnosticoVisualCopia=diagnosticoVisual.deepClone();*/
+        for(tratamientoWrapper i:tratamientosVisual){
+            tratamientoWrapper TW=new tratamientoWrapper(i.tratamiento, null, i.estado,i.ojo, i.fechaCreacion);
+            tratamientosVisualCopia.add(TW);
+        }
+    }
+
+    public void limpiaDuplicados(){
+        for(tratamientoWrapper i:tratamientosVisual){
+
+        }
+    }
+
+    public void filtraDiagnosticos(){
+        List<EHR_Condition_SU__c> condiciones       = new List<EHR_Condition_SU__c>();
+        List<EHR_Condition_SU__c> condicionTemporal = new List<EHR_Condition_SU__c>();
+        diagnosticoConTratamientoOriginal           = new List<EHR_Condition_SU__c>();
+        diagnosticoSinTratamientoOriginal           = new List<EHR_Condition_SU__c>();
+        tratamientoOriginal                         = new list<EHR_Care_Plan_SU__c>();
+        List<String> nombresTratamientos            = new List<String>();
+
+
+        if(habiaPlanSalud){//filtra aquellos diagnosticos que existian en el plan de salud
+            for(EHR_Care_Plan_SU__c i:carePlan){
+                try{
+                    condiciones=[SELECT Id, Name, EHR_Diagnostico_Template__c,EHR_Diagnostico_Template__r.Name, EHR_Care_Plan_SU__c,Ojo__c,Ambos_ojos_cp__c
+                                 FROM EHR_Condition_SU__c where EHR_Care_Plan_SU__c=:i.id];
+                    System.debug('Los diagnosticos asociados de '+i+' son '+condiciones);
+                    System.debug('size de las condiciones '+condiciones.size());
+                    for(EHR_Condition_SU__c x:condiciones){
+                        diagnosticoConTratamientoOriginal.add(x);
+                        diagnosticoWrapper DW = new diagnosticoWrapper();
+                        DW.diagnostico = x.EHR_Diagnostico_Template__r.Name;
+                        if(i.Estado__c=='Eliminado'){
+                            DW.colorFondo           = 'tabla-cinco noTomarEnCuenta';
+                            DW.bloqueaBotonEliminar = 'slds-hidden';
+                            DW.checkEliminarDiagnostico=true;  //04/04/2017
+                        }
+                        if(i.Estado__c=='Realizada'||i.Estado__c=='Cancelada'){
+                            DW.bloqueaBotonEliminar='slds-hidden';
+                             DW.colorFondo           = 'noTomarEnCuenta';
+                        }
+                        for(Opportunity y:i.Oportunidades__r){
+                            System.debug('y'+y);
+                            if(y.Ok_Subtotal_Importe__c==0){
+                                System.debug('Probabilidad falso en diagnostico');
+
+                            }else{
+                                DW.bloqueaBotonEliminar = 'slds-hidden';
+                                 DW.colorFondo           = 'noTomarEnCuenta';
+                                System.debug('Probabilidad true en diagnostico');
+                            }
+                        }
+
+                        DW.ojo=x.Ambos_ojos_cp__c;
+                        DW.ojoVista=x.Ojo__c;
+                        diagnosticoVisual.add(DW);
+                    }
+                }catch(Exception e){
+                    System.debug('ESTE TRATAMIENTO NO TIENE DIAGNOSTICOS ASOCIADOS '+i);
+                }
+
+                TratamientoWrapper TW=new TratamientoWrapper(i.Plantilla_de_Seguro_Medico__r.Name, 'Ninguno', i.Estado__c ,'Ninguno', Date.today() );
+                TW.nota=i.Nota__c;
+                for(Opportunity y:i.Oportunidades__r){
+                    System.debug('y'+y);
+                    if(y.Ok_Subtotal_Importe__c==0){
+                        System.debug('y falso');
+                        TW.oportunidadSeguimiento=false;
+                    }else{
+                        TW.oportunidadSeguimiento=true;
+                        System.debug('y true');
+                    }
+                }
+                /*System.debug('i.Oportunidad_seguimiento_dos__c '+i.Oportunidad_seguimiento_dos__c);
+if(i.Oportunidad_seguimiento_dos__c==null){
+System.debug('si fue nulo');
+TW.oportunidadSeguimiento=false;
+}else{
+System.debug('no fue nulo');
+TW.oportunidadSeguimiento=i.Oportunidad_seguimiento_dos__c;
+}*/
+                System.debug('al salir fue '+TW.oportunidadSeguimiento);
+                if(i.Urgente__c!=null){
+                    TW.Urgente=i.Urgente__c;
+                }
+                TW.Catarata=i.Cx_Catarata__c;
+                // System.debug('el multipicklist es'+i.Estudios__c);
+                String cadenaMultipicklist      = i.Estudios__c;
+                List<String> separadorMultipick = new List<String>();
+                // System.debug('cadenaMultipicklist'+cadenaMultipicklist);
+                if(cadenaMultipicklist!=null){
+                    separadorMultipick=cadenaMultipicklist.split(';');
+                    TW.Estudios=new List<String>();
+                    for(String h:separadorMultipick){
+                        Tw.Estudios.add(h);
+                    }
+                }
+                //  TW.Estudios=i.Plantilla_de_Seguro_Medico__r.Estudios__c;
+                TW.diagnosticos='This is line 1'+'\n<br/>'+'This is line2';
+                TW.TitleTratamiento='Autorizado por: '+i.Autorizado_por__r.Name+'    Creado por: '+i.Creado_x__r.Name+'    Estado: '+i.Estado__c;
+                //Funcion para agregar los valores al modal de la calificacion del doctor y agregar la palomita a la pura visual force
+                if(i.Estado__c=='Por Autorizar'||i.Estado__c=='En Proceso'||i.Estado__c=='Eliminado'){
+                    TW.checklist=true;
+                    if(i.Estado__c=='Por Autorizar'){
+                        System.debug('i.Creado_x__c '+i.Creado_x__c);
+                        System.debug('etapa.Personal__c'+etapa.Personal__c);
+                        planSalud.Nombre_Dr_CD__c=i.Creado_x__c;
+                        planSalud.Nombre_del_Dr__c=etapa.Personal__c;
+                        planSalud.Numero_Exp__c=etapa.Paciente__r.AccountNumber;
+                        planSalud.Fecha_Consulta__c=i.Fecha_Elaboracion__c;
+
+                    }
+                }
+                if(!condiciones.isEmpty()){
+                    if(condiciones[0].Ambos_ojos_cp__c!='Ninguno')
+                    {
+                        TW.ojo=condiciones[0].Ambos_ojos_cp__c;
+                    }
+                }else{
+                    TW.ojo=i.Ojo__c;
+                }
+                boolean sePuedeAgregar=true; //Esto se hace para poder eliminar  los duplicados en aquellos tratamientos que sí estaban antes
+                for(TratamientoWrapper s:tratamientosVisual){
+                    if(TW.tratamiento==s.tratamiento&&
+                       //TW.estado==s.estado&&
+                       //TW.diagnosticos==s.diagnosticos
+                       TW.ojo==s.ojo){
+
+                           System.debug('Encontre un duplicado y es '+TW);
+                           sePuedeAgregar=false;
+                       }
+                }
+                if(sePuedeAgregar){
+                    if(TW.tratamiento!=null){   //Se pone para que no muestre aquellos tratamientos que no tienen nombre
+                        if(TW.tratamiento!=''){
+                            tratamientosVisual.add(TW);
+                            tratamientoOriginal.add(i);
+                        }
+                    }
+                }
+
+
+                tratamientosConjuntoVisual.add(i.Plantilla_de_Seguro_Medico__r.Name);
+
+            }
+        }
+        //Filtramos todos quellos diagnosticos que no estan asociados a un care plan
+        condiciones.clear();
+        List<String> apoyoDiagnosticos=new List<String>();
+        For(diagnosticoWrapper dw:diagnosticoVisual){
+            apoyoDiagnosticos.add(dw.diagnostico);
+        }
+        System.debug('ApoyoDiagnosticos es'+apoyoDiagnosticos);
+        List<diagnosticoWrapper> apoyoSinCarePlan=new List<diagnosticoWrapper>();//Se crea esta variable para ayudarme a guardar los tratamientos de abajo(sin care plan)
+        /* condiciones=[SELECT Id, Name, EHR_Diagnostico_Template__c,EHR_Diagnostico_Template__r.Name, EHR_Care_Plan_SU__c,Ojo__c
+FROM EHR_Condition_SU__c where Paciente__c =:etapa.Paciente__c and
+EHR_Diagnostico_Template__r.Name not in:apoyoDiagnosticos];*/ //Este query no jala por que si tengo un diagnostico con nombre
+        // repetido en lo que no se han implementado no lo trae
+        condiciones=[SELECT Id, Name, EHR_Diagnostico_Template__c,EHR_Diagnostico_Template__r.Name, EHR_Care_Plan_SU__c,Ojo__c,Ambos_ojos_cp__c
+                     FROM EHR_Condition_SU__c WHERE Paciente__c =:etapa.Paciente__c AND
+                     EHR_Care_Plan_SU__c=null];
+        System.debug('Las Condiciones sin care plan son'+condiciones);
+        for(EHR_Condition_SU__c x:condiciones){
+            diagnosticoSinTratamientoOriginal.add(x);
+            diagnosticoWrapper DW = new diagnosticoWrapper();
+            DW.diagnostico = x.EHR_Diagnostico_Template__r.Name;
+            DW.ojo         = x.Ambos_ojos_cp__c;
+            DW.ojoVista=x.Ojo__c;
+            diagnosticoVisual.add(DW);
+            tratamientosConjuntoVisual.add(diagnosticoTratamiento.get(x.EHR_Diagnostico_Template__r.Name));
+            TratamientoWrapper TW = new TratamientoWrapper(diagnosticoTratamiento.get(x.EHR_Diagnostico_Template__r.Name), 'Ninguno', 'En Espera' ,'Ninguno', Date.today() );
+            TW.oportunidadSeguimiento=false;
+            TW.diagnosticos='This is line 1'+'\n<br/>'+'This is line2';
+
+            if(condiciones[0].Ambos_ojos_cp__c!='Ninguno')
+            {
+                TW.ojo=x.Ambos_ojos_cp__c;
+
+            }
+
+            boolean sePuedeAgregar=true; //Esto se hace para poder eliminar  los duplicados en aquellos tratamientos que no estaban antes
+            for(TratamientoWrapper s:tratamientosVisual){
+                if(TW.tratamiento==s.tratamiento&&
+                   //TW.estado==s.estado&&
+                   //TW.diagnosticos==s.diagnosticos
+                   TW.ojo==s.ojo){
+
+                       System.debug('Encontre un duplicado y es '+TW);
+                       sePuedeAgregar=false;
+                   }
+            }
+            if(sePuedeAgregar){
+                if(TW.tratamiento!=null){   //Se pone para que no muestre aquellos tratamientos que no tienen nombre
+                    if(TW.tratamiento!=''){
+                        tratamientosVisual.add(TW);
+                    }
+                }
+            }
+        }
+
+        //25/02/2017
+
+        List<EHR_Care_Plan_Template_SU__c> cpEstudios=new List<EHR_Care_Plan_Template_SU__c>();
+        for(TratamientoWrapper i:tratamientosVisual){
+            nombresTratamientos.add(i.tratamiento);
+        }
+        cpEstudios=[SELECT  Id, Name, Estudios__c FROM EHR_Care_Plan_Template_SU__c where Name in:nombresTratamientos];
+        for(EHR_Care_Plan_Template_SU__c i:cpEstudios){
+            for(TratamientoWrapper j:tratamientosVisual){
+                if(i.Name==j.tratamiento&&j.estado=='En Espera'){
+                    String cadenaMultipicklist      = i.Estudios__c;
+                    List<String> separadorMultipick = new List<String>();
+                    //  System.debug('cadenaMultipicklist'+cadenaMultipicklist);
+                    if(cadenaMultipicklist!=null){
+                        separadorMultipick=cadenaMultipicklist.split(';');
+                        j.Estudios = new List<String>();
+                        for(String h:separadorMultipick){
+                            j.Estudios.add(h);
+                        }
+                    }
+                }
+            }
+        }
+        System.debug('TERMINE DE FILTRAR '+diagnosticoVisual);
+    }
+    //En este metodo vamos a guardar el diagnostico en una lista cuando enciendan el check, cuando le den eliminar mandaremos esta lista al javascript
+    //para poder mostrar en el modal cuales son los tratamientos asociados
+
+    public void guardaDiagnosticosEliminadosEnLista(){
+        System.debug('se ha seleccionado un check '+selDiagnosticoDelete+''+ojoSelDiagnosticoDelete);
+        for(diagnosticoWrapper i:diagnosticoVisual){
+            if(i.colorFondo!='tabla-cinco noTomarEnCuenta'&&i.checkEliminarDiagnostico){
+
+                System.debug('i a eliminar es '+i);
+                diagnosticosSeleccionadosAEliminar.add(i.diagnostico);
+                ojosSeleccionadosAEliminar.add(i.ojo);
+               /* selDiagnosticoDelete=i.diagnostico;
+                ojoSelDiagnosticoDelete=i.ojo;*/
+
+            }
+
+            System.debug(' el check es '+i.checkEliminarDiagnostico);
+        }
+        if(!diagnosticosSeleccionadosAEliminar.isEmpty()){
+            selDiagnosticoDelete=diagnosticosSeleccionadosAEliminar.remove(0);
+            ojoSelDiagnosticoDelete=ojosSeleccionadosAEliminar.remove(0);
+          eliminaDiagnostico();
+        }
+
+    }
+    public void inicializaDiagnosticos(){
+        diagnosticoVisual      = new List<diagnosticoWrapper>();
+        diagnosticoTratamiento = new map<String,String>();
+        diagnosticoModal       = new List<SelectOption>();
+
+        List<EHR_Diagnosticos_Template__c> diagnosticos=new List<EHR_Diagnosticos_Template__c>();
+
+        diagnosticos=[SELECT Id, Name, Care_Plan_Template__c ,Care_Plan_Template__r.Name FROM EHR_Diagnosticos_Template__c];
+        for(EHR_Diagnosticos_Template__c i: diagnosticos){
+            diagnosticoTratamiento.put(i.Name, i.Care_Plan_Template__r.Name);
+            diagnosticoModal.add(new SelectOption(i.Name,i.Name));
+        }
+        diagnosticoModal.sort();
+        system.debug('Mapa diagnostico Tratamiento '+diagnosticoTratamiento);
+        JsonMap=JSON.serialize(diagnosticoTratamiento);
+    }
+
+    public void asignaTratamientos(){ //funcion que le asigna a cada tratamiento su diagnostico solo cuando se ejecuta el constructor
+        set<String> llaveDiagnostico = new set<string>();
+        llaveDiagnostico = diagnosticoTratamiento.keySet();
+        for(TratamientoWrapper i: tratamientosVisual){//filtramos por los visuales
+            List<String> valoresAgregar = new List<String>();
+            List<String> valoresLimpios = new List<string>();
+            for(String j:llaveDiagnostico)    {
+                if(i.tratamiento==diagnosticoTratamiento.get(j)){
+                    valoresAgregar.add(j);
+                }
+            }
+            for(diagnosticoWrapper z:diagnosticoVisual){ //Usamos estos dos ciclos para limpiar y que solo se muestren aquellos diagnosticos que si estan.
+                for(String k:valoresAgregar){
+                    if(z.diagnostico==k&&i.ojo==z.ojo){
+                        valoresLimpios.add(k);
+                    }
+                }
+            }
+            //i.diagnosticosLista.clear();
+            i.diagnosticosLista=valoresLimpios.clone();
+            String diagnosticos=construyeStringConBR( i.diagnosticosLista);
+            i.diagnosticos=diagnosticos;
+        }
+    }
+
+    public void asignaDiagnosticosATratamientos(){
+        for(TratamientoWrapper i: tratamientosVisual){
+            List<String> valoresAgregar=new List<String>();
+            for(diagnosticoWrapper j:diagnosticoVisual)    {
+                if(i.tratamiento==diagnosticoTratamiento.get(j.diagnostico)&&i.ojo==j.ojo){
+                    valoresAgregar.add(j.diagnostico);
+                }
+            }
+            i.diagnosticosLista=valoresAgregar.clone();
+            String diagnosticos=construyeStringConBR( i.diagnosticosLista);
+            i.diagnosticos=diagnosticos;
+        }
+    }
+
+    public String construyeStringConBR(List<string> diagnosticosLista){ //Funcion que asigna el <br> para que se pueda visualizar bien
+        String cadenaDiagnosticos;
+        for(String i:diagnosticosLista){
+            if(cadenaDiagnosticos==null){
+                cadenaDiagnosticos=i;
+            }else{
+                cadenaDiagnosticos=cadenaDiagnosticos+'\n<br/>'+i;
+            }
+        }
+        return cadenaDiagnosticos;
+    }
+
+    public void construyeWrapper(){
+
+        tratamientosModal=new LIST<SelectOption>();
+        for(String trCj: tratamientosConjunto){
+            TratamientoWrapper TW=new TratamientoWrapper(trCj, 'Ninguno', 'Ninguno','Ninguno', Date.today() );
+            TW.diagnosticos='This is line 1'+'\n<br/>'+'This is line2';
+            // tratamientosVisual.add(TW); PODRIAMOS DESCOMENTAR ESTA LINEA Y AGREGA TODOS LOS TRATAMIENTOS SIN PRIORIDADES
+            tratamientosModal.add(new SelectOption(trCj, trCj));
+            //  System.debug('TW '+TW);
+            //  System.debug('tratamientosVisual '+tratamientosVisual);
+        }
+        tratamientosModal.sort();
+    }
+
+    public void divideEnListasTratamientos(){ //Dividimos los tratamientos en las diferentes listas
+        indicaModalFormularioTratamiento='falso';
+        list<TratamientoWrapper> tratamientosVisualEnProceso  = new List<TratamientoWrapper>(); //Listas que se ocupan para clasificar a los tratamientos en la vista
+        list<TratamientoWrapper> tratamientosVisualEnEspera   = new List<TratamientoWrapper>();
+        list<TratamientoWrapper> tratamientosVisualRealizadas = new List<TratamientoWrapper>();
+        list<TratamientoWrapper> tratamientosVisualCanceladas = new List<TratamientoWrapper>();
+        list<TratamientoWrapper> tratamientoVisualEliminadas  = new List<TratamientoWrapper>();
+        tratamientosVisualEnProceso.clear();
+        tratamientosVisualEnEspera.clear();
+        tratamientosVisualRealizadas.clear();
+        tratamientosVisualCanceladas.clear();
+        tratamientoVisualEliminadas.clear();
+
+
+        for(TratamientoWrapper i:tratamientosVisual){
+            if(i.estado=='En Proceso'){
+                i.colorFondo='tabla-uno';
+                tratamientosVisualEnProceso.add(i);
+                //Si la oportunidad tiene un porcentaje diferente de cero vamos a eliminar el boton para que no puedan eliminarla
+                if(i.oportunidadSeguimiento==null){
+                    i.oportunidadSeguimiento=false;
+                }
+                if(i.oportunidadSeguimiento){
+                    i.bloqueaBotonEliminar='slds-hidden';
+                    i.bloqueaInputCheck='slds-hidden';
+                }else{
+                    i.bloqueaBotonEliminar='slds-button slds-button--brand fondo-verde-claro ';
+                }
+
+            }else if(i.estado=='En Espera'){
+                i.colorFondo='tabla-dos';
+                tratamientosVisualEnEspera.add(i);
+                i.bloqueaBotonEliminar='slds-button slds-button--brand fondo-verde-claro ';
+
+
+            }else if(i.estado=='Realizada'){
+                i.colorFondo='tabla-tres';
+                tratamientosVisualRealizadas.add(i);
+                i.bloqueaBotonEliminar='slds-hidden';
+                i.bloqueaInputCheck='slds-hidden';
+                i.oportunidadSeguimiento=true; //Nos va a bloquear los campos en realizados para que no le puedan mover
+
+            }else if(i.estado=='Cancelada'){
+                i.colorFondo='tabla-cuatro';
+                tratamientosVisualCanceladas.add(i);
+                i.bloqueaBotonEliminar='slds-hidden';
+
+            }else if(i.estado=='Por Autorizar'){
+                i.colorFondo='tabla-uno';
+                tratamientosVisualEnProceso.add(i);
+                //Si la oportunidad tiene un porcentaje diferente de cero vamos a eliminar el boton para que no puedan eliminarla
+                System.debug('435 i.oportunidadSeguimiento'+i.oportunidadSeguimiento);
+                if(i.oportunidadSeguimiento==null){
+                    i.oportunidadSeguimiento=false;
+                }
+                if(i.oportunidadSeguimiento){
+                    i.bloqueaBotonEliminar='slds-hidden';
+                    i.bloqueaInputCheck='slds-hidden';
+                }else{
+                    i.bloqueaBotonEliminar='slds-button slds-button--brand fondo-verde-claro ';
+                }
+                indicaModalFormularioTratamiento='verdadero';
+
+            }else if(i.estado=='Eliminado'){
+                i.colorFondo='tabla-cinco noTomarEnCuenta';
+                tratamientoVisualEliminadas.add(i);
+                i.bloqueaBotonEliminar='slds-hidden';
+            }
+        }
+        tratamientosVisual.clear();
+        for(TratamientoWrapper i:tratamientosVisualEnProceso){
+            tratamientosVisual.add(i);
+        }
+        for(TratamientoWrapper i:tratamientosVisualEnEspera){
+            tratamientosVisual.add(i);
+        }
+        for(TratamientoWrapper i:tratamientosVisualRealizadas){
+            tratamientosVisual.add(i);
+        }
+        for(TratamientoWrapper i:tratamientosVisualCanceladas){
+            tratamientosVisual.add(i);
+        }
+        for(TratamientoWrapper i:tratamientoVisualEliminadas){
+            tratamientosVisual.add(i);
+        }
+        System.debug('SALIENDO DE ORDENAR LA BANDERA ES '+indicaModalFormularioTratamiento);
+    }
+
+    public void inicializaTratamientosEstimaciones(){
+        List<EHR_Care_Plan_Template_SU__c> mcsdos;
+        tratamientosConjunto       = new set<String>();
+        tratamientosConjuntoVisual = new set<String>();
+        mcsdos = [SELECT Id, Name,tipo_de_estimacion__c  FROM EHR_Care_Plan_Template_SU__c];
+        System.debug('mcsdos '+mcsdos);
+        for(EHR_Care_Plan_Template_SU__c i: mcsdos){
+            tratamientosConjunto.add(i.Name);
+        }
+        system.debug('tratamientosConjunto '+tratamientosConjunto);
+    }
+
+    public void autoriza(){//Este método se ejecuta cuando activo o desactivo algun checklist de la VF, determina a que proceso cambia el estado del tratamiento
+        System.debug('activaCheckList'+activaCheckList);
+        System.debug('ojoActivaCheckList'+ojoActivaCheckList);
+        for(TratamientoWrapper i:tratamientosVisual){
+
+            if(i.tratamiento==activaCheckList&&i.estado=='En Espera'&&i.ojo==ojoActivaCheckList){
+                if(personal.Rango__c=='Junior'){
+                    i.estado='Por Autorizar';
+                }else if(personal.Rango__c=='Senior'){
+                    i.estado='En Proceso';
+                }
+                System.debug('linea 471 '+i.tratamiento);
+                if(tratamientosActivosConfirmacionGuardado==''){
+                    tratamientosActivosConfirmacionGuardado='-'+i.tratamiento;
+                }
+                else{
+                    tratamientosActivosConfirmacionGuardado=tratamientosActivosConfirmacionGuardado+'\\n -'+i.tratamiento;
+                }
+                System.debug('tratamientosActivosConfirmacionGuardado '+tratamientosActivosConfirmacionGuardado);
+
+            }
+            else if(i.tratamiento==activaCheckList&&(i.estado=='En Proceso'||i.estado=='Por Autorizar')&&i.ojo==ojoActivaCheckList){
+                claseDinamica='slds-show';
+                i.estado='En Espera';
+                System.debug('String normal '+tratamientosActivosConfirmacionGuardado);
+                System.debug('I tratamiento es '+i.tratamiento);
+                List<String> arrayTratamientos=tratamientosActivosConfirmacionGuardado.split('-');
+                System.debug('before remove '+arrayTratamientos);
+                integer banderaPosicion=0;
+                for(String strTrat:arrayTratamientos){
+                    if(strTrat.contains(i.tratamiento)){
+                        break;
+                    }
+                    banderaPosicion=banderaPosicion+1;
+                }
+                try{
+                arrayTratamientos.remove(banderaPosicion);
+                    boolean indicadorSalida=true;
+                    while(indicadorSalida){
+                        if(arrayTratamientos[0]==''){
+                            arrayTratamientos.remove(0);
+                        }else{
+                            indicadorSalida=false;
+                        }
+                    }
+                string valorInicial=arrayTratamientos[0];
+                    System.debug('valorINIcial'+valorInicial);
+                    valorInicial=valorInicial.removeStart(', ');
+                    valorInicial=valorInicial.removeStart('-');
+                    System.debug('valorINIcial8'+valorInicial+'8');
+                arrayTratamientos[0]=valorInicial;
+                    tratamientosActivosConfirmacionGuardado='';
+                    for(String k:arrayTratamientos){
+                        if(tratamientosActivosConfirmacionGuardado==''){
+                            tratamientosActivosConfirmacionGuardado='-'+k;
+                        }
+                        else{
+                            tratamientosActivosConfirmacionGuardado=tratamientosActivosConfirmacionGuardado+'\\n -'+k;
+                        }
+                    }
+                    
+                }catch(Exception e){
+                    System.debug('Hubo una excepcion al eliminar un tratamiento en el string');
+                }
+                System.debug('after remove '+arrayTratamientos);
+            }else if(i.tratamiento==activaCheckList&&i.estado=='Eliminado'&&i.ojo==ojoActivaCheckList){
+                i.estado='En Espera';
+                try{
+                    for(String b:i.diagnosticosLista){
+                        for(diagnosticoWrapper c:diagnosticoVisual ){
+                            if(b==c.diagnostico){
+                                c.colorFondo='';
+                                //c.bloqueaBotonEliminar='slds-button slds-button--brand slds-text-align--right fondo-verde-claro';
+                              c.bloqueaBotonEliminar='';
+                                c.checkEliminarDiagnostico=false;
+                            }
+                        }
+                    }
+                }catch(Exception e){}
+                System.debug('El wrapper es'+i);
+                System.debug('des-eliminando');
+            }
+        }
+        divideEnListasTratamientos();
+        System.debug('activaCheckList '+activaCheckList);
+        System.debug('tratamientosActivosConfirmacionGuardado '+tratamientosActivosConfirmacionGuardado);
+    }
+
+    public void inicializaDatos(){
+        system.debug('etapa'+etapa.id);
+        System.debug('INICIALIZA '+identificador );
+        carePlan  = new List<EHR_Care_Plan_SU__c>();
+        planSalud = new Plan_de_Salud__c();
+        diagnosticosSeleccionadosAEliminar=new List<String>();
+      ojosSeleccionadosAEliminar=new List<String>();
+        seHaCreadoEstimacionCampana=false;
+
+
+        if(etapa.id==null){
+            //   System.debug('entre al if');
+            etapa = [SELECT id,Personal__c,Paciente__c,Paciente__r.AccountNumber,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                     Visita__c,Clinica__c,Flujo__c,Flujo__r.Name, Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                     Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c, Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c,
+                     Configuracion_Flujo__r.Continuar_con_paciente__c,Stamp_Inicio_Dilatacion__c,
+                     Configuracion_Flujo__r.Valida_pasa_a_Programacion__c
+                     FROM Etapa_Paciente__c WHERE id=:identificador];
+            Account cuentaBF=[Select id,Campana__r.Convenio_Camp__r.No_vender_lentes__c from Account where id=:etapa.Paciente__c];
+            cuentaConvenioBF=cuentaBF.Campana__r.Convenio_Camp__r.No_vender_lentes__c;
+
+            // <<< Erika
+            // Obten variable oEtapaPacienteDos
+            for(Etapa_Paciente__c oP : [SELECT id,Personal__c,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                                        Visita__c,Clinica__c,Flujo__c,Flujo__r.Name, Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                                        Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c, Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c,
+                                        Configuracion_Flujo__r.Continuar_con_paciente__c,Stamp_Inicio_Dilatacion__c
+                                        FROM Etapa_Paciente__c WHERE id= :identificador]){
+                                            oEPaciente = oP;
+                                        }
+            //Busca Pesonal clinica
+            for(Personal__c p:[SELECT id,Estatus_Personal__c,Etapas__c,Puesto__c FROM Personal__c WHERE Id=:oEPaciente.Personal__c]){
+                oPersonal = p;
+            }
+            // Erika >>>
+            personal=[SELECT Id, Especialidad__c, Puesto__c, Rango__c, UsuarioSalesforce__c FROM Personal__c WHERE id=:etapa.Personal__c];
+            if(personal.Rango__c==null){
+                personal.Rango__c='Junior';
+            }
+            try{
+
+                planSalud = [SELECT id,Name, Paciente__c, Paciente__r.AccountNumber, Fecha_Consulta__c, Numero_Exp__c, Nombre_Dr_CD__c, Nombre_del_Dr__c,
+                             T_cnica_a_realizar__c, Referencia_Correcta__c, Caso_Asignado__c, Observaciones__c
+                             FROM Plan_de_Salud__c WHERE Paciente__c=:etapa.Paciente__c ];
+                carePlan = [SELECT Id, Plantilla_de_Seguro_Medico__c,Fecha_Elaboracion__c ,Plantilla_de_Seguro_Medico__r.Name, Name, Pronostico__c, Prioridad__c, Estado__c, Ojo__c,
+                            Autorizado_por__r.Name, Oportunidad_seguimiento_dos__c, Creado_x__c ,Creado_x__r.Name, Nota__c, Cx_Catarata__c ,Plantilla_de_Seguro_Medico__r.Estudios__c ,Estudios__c,Urgente__c,
+                            (Select Name, Ok_Subtotal_Importe__c, Amount from Oportunidades__r limit 1)
+                            FROM EHR_Care_Plan_SU__c WHERE Plan_de_Salud__c =:planSalud.id ];
+                habiaPlanSalud=true;
+                System.debug('SI HABIA PLAN DE SALUD'+carePlan);
+            }catch(Exception E){
+                planSalud.Paciente__c = etapa.Paciente__c;
+                habiaPlanSalud        = false;
+                System.debug('NO HABIA PLAN DE SALUD');
+            }
+        }
+        System.debug('FIN INICIALIZA');
+    }
+
+    public void imprimir(String tem){
+        System.debug('IDD '+tem);
+        identificador=tem;
+    }
+
+    public void inicializaCataraCx(){
+        CxCatarata=new List<SelectOption>();
+
+        Schema.DescribeFieldResult CatarataCCx=EHR_Care_Plan_SU__c.Cx_Catarata__c.getDescribe();
+        List<Schema.PicklistEntry> plp = CatarataCCx.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+
+            //  system.debug('Catarata'+f.getLabel());
+            // system.debug('Catarata'+f.getValue());
+            // System.debug('Catarata '+f);
+            CxCatarata.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+    public void inicializaOjos(){
+        //ojoAElegir
+        ojoAElegir=new List<SelectOption>();
+
+        Schema.DescribeFieldResult ojoResultado=EHR_Condition_SU__c.Ambos_ojos_cp__c.getDescribe();
+        List<Schema.PicklistEntry> plp = ojoResultado.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+
+            //   system.debug('pronostico'+f.getLabel());
+            //   system.debug('pronostico'+f.getValue());
+            //   System.debug('pronostico '+f);
+            ojoAElegir.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+
+    public void inicializaPronostico(){
+        pronosticoCarePlan=new List<SelectOption>();
+        Schema.DescribeFieldResult pronosticoResultado=EHR_Care_Plan_SU__c.Pronostico__c.getDescribe();
+        List<Schema.PicklistEntry> plp = pronosticoResultado.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+
+            //   system.debug('pronostico'+f.getLabel());
+            //   system.debug('pronostico'+f.getValue());
+            //   System.debug('pronostico '+f);
+            pronosticoCarePlan.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+
+    /* METODO GUARDAR NO TOCARP*/
+
+    public void eliminaDiagnostico(){
+        String ojoTemporal;
+        String ojoVista;
+        system.debug('ELIMINA '+selDiagnosticoDelete);
+        Integer x=0;
+        Integer indiceAEliminar=0;
+        System.debug(diagnosticoVisual);
+        for(diagnosticoWrapper i:diagnosticoVisual){
+
+            System.debug('ITERATE');
+            if(i.diagnostico==selDiagnosticoDelete&&ojoSelDiagnosticoDelete==i.ojo){     // //linea agregada 15/02/2016
+                indiceAEliminar=x;
+                i.colorFondo='tabla-cinco noTomarEnCuenta';
+                ojoTemporal=i.ojo;
+                ojoVista=i.ojoVista;
+                break;
+            }
+            x=x+1;
+        }
+        System.debug('indiceAEliminar'+indiceAEliminar);
+        System.debug('SE VA A ELIMINAR ESTE DIAGNOSTICO '+diagnosticoVisual.get(indiceAEliminar));
+        diagnosticoVisual.remove(indiceAEliminar);   // Con esta linea quitamos el diagnostico de la tabla de diagnosticos, lo comentamos por si se requiere despues
+        /*Vamos a almacenar el tratamiento para comprobar que solo exista
+un diagnostico asociado al tratamiento, en caso de que exista otro no se
+va a poder eliminar ese tratamiento, hasta que eliminen todos los diagnosticos*/
+        String tratamientoObtenidoTemporal;
+        tratamientoObtenidoTemporal=diagnosticoTratamiento.get(selDiagnosticoDelete);
+        System.debug('tratamientoObtenidoTemporal'+tratamientoObtenidoTemporal);
+        set<string> conjuntoLlave=new Set<String>();
+        conjuntoLlave=diagnosticoTratamiento.keySet();
+        List<String> temporal=new List<String>();
+        Boolean sePuedeEliminarTratamiento=true;
+
+        for(String z:conjuntoLlave){
+            if(tratamientoObtenidoTemporal==diagnosticoTratamiento.get(z)){
+                temporal.add(z);
+            }
+        }
+        System.debug('lista de los diagnosticos asociados es '+temporal);
+        //Con esto vamos a identificar que solo haya un diagnostico asociado, y si hay dos o mas que sigan aun no nos permita eliminarlo
+        system.debug('ojoSelDiagnosticoDelete'+ojoSelDiagnosticoDelete);
+        if(!diagnosticoVisual.isEmpty() ){
+            System.debug('La lista no estuvo vacia');
+            for(String z:temporal){
+                for(diagnosticoWrapper k:diagnosticoVisual){
+                    System.debug('fondo '+k.colorFondo+' ojo '+k.ojo+' '+k.diagnostico);
+                    if(z==k.diagnostico&&k.colorFondo!='tabla-cinco noTomarEnCuenta'&&k.ojo==ojoSelDiagnosticoDelete){ //linea agregada 15/02/2016
+                        sePuedeEliminarTratamiento=false;
+                    }
+                }
+            }
+        }
+        System.debug('sePuedeEliminarTratamiento'+sePuedeEliminarTratamiento);
+        if(sePuedeEliminarTratamiento){
+            System.debug('SI VOY A ELIMINAR EL TRATAMIENTO DEL DIAGNOSTICO Y ES '+tratamientoObtenidoTemporal);
+            selTratamientoDelete    = tratamientoObtenidoTemporal;
+            ojoSelTratamientoDelete = ojoSelDiagnosticoDelete;
+            EliminaTratamiento();
+        }
+        diagnosticoWrapper DW = new diagnosticoWrapper();
+        DW.diagnostico          = selDiagnosticoDelete;
+        DW.colorFondo           = 'tabla-cinco noTomarEnCuenta';
+        DW.bloqueaBotonEliminar = 'slds-hidden';
+        DW.ojo                  = ojoTemporal;
+        DW.ojoVista=ojoVista;
+        diagnosticoVisual.add(DW);
+         if(!diagnosticosSeleccionadosAEliminar.isEmpty()){
+            selDiagnosticoDelete=diagnosticosSeleccionadosAEliminar.remove(0);
+            ojoSelDiagnosticoDelete=ojosSeleccionadosAEliminar.remove(0);
+          eliminaDiagnostico();
+        }
+    }
+
+    public void FuncionDummy(){
+        for(TratamientoWrapper i:tratamientosVisual){
+            if(i.tratamiento==selTratamientoDelete){
+                cualDiagnosticoSeElimina=i.diagnosticos;
+            }
+        }
+    }
+
+    public void FuncionDummyDos(){
+        System.debug('Funcion dummy dos');
+    }
+
+    public void EliminaTratamiento(){
+
+        for(TratamientoWrapper y:tratamientosVisual){
+            system.debug('Estudios'+y.Estudios);
+        }
+
+        Integer index=0;
+        Integer indexEliminar=0;
+        String ojoTemporal;
+        System.debug('comentarioEliminaTratamiento'+comentarioEliminaTratamiento);
+        System.debug('ELIMINA '+selTratamientoDelete+' con el ojo '+ojoSelTratamientoDelete);
+        for(TratamientoWrapper i:tratamientosVisual){
+            if(i.tratamiento==selTratamientoDelete&&i.ojo==ojoSelTratamientoDelete){
+                //  indexEliminar=index;
+                //  break;
+                ojoTemporal=i.ojo;
+                i.estado='Eliminado';
+                i.checklist=true;
+                i.comentarioElimina=comentarioEliminaTratamiento;
+                system.debug('Estoy eliminando '+i);
+            }
+            //index=index+1;
+        }
+        for(TratamientoWrapper i:tratamientosVisual){
+            system.debug(i.estado+'   '+i.tratamiento);
+        }
+        List<String> diagnosticosAsociadosTratamiento=new List<String>();
+        for(diagnosticoWrapper i:diagnosticoVisual){
+            if(diagnosticoTratamiento.get(i.diagnostico)==selTratamientoDelete&&i.ojo==ojoTemporal){
+                diagnosticosAsociadosTratamiento.add(i.diagnostico);
+                System.debug('ELIMINE UN DIAGNOSTICO '+i);
+                i.colorFondo='tabla-cinco noTomarEnCuenta';
+                i.bloqueaBotonEliminar='slds-hidden';
+            }
+        }
+
+        //   TratamientoWrapper removido=tratamientosVisual.remove(indexEliminar);
+        /*  System.debug('removido '+removido);
+System.debug('tratamientosVisual'+tratamientosVisual);
+for(TratamientoWrapper i:tratamientosVisual){
+System.debug('i '+i);
+}*/
+        divideEnListasTratamientos();
+        comentarioEliminaTratamiento='';
+    }
+
+    public void AgregaTratamiento(){
+        system.debug('seleccionadoModal'+seleccionadoModal);
+        boolean agregarTrat=true;
+        for(TratamientoWrapper tw:tratamientosVisual ){
+            if(tw.tratamiento==seleccionadoModal&&tw.ojo==ojoTratamientoElegido){
+                agregarTrat=false;
+            }
+        }
+        if(seleccionadoModal!='Ninguno'&&ojoTratamientoElegido!='Ninguno'&&agregarTrat){
+            TratamientoWrapper TW=new TratamientoWrapper(seleccionadoModal, 'Ninguno','En Espera', 'Ninguno', Date.today() );
+            TW.ojo=ojoTratamientoElegido;
+            tratamientosVisual.add(TW);
+            seleccionadoModal     = 'Ninguno';
+            ojoTratamientoElegido = 'Ninguno';
+
+            divideEnListasTratamientos();
+        }
+    }
+
+    public void AgregaDiagnostico(){
+        boolean agregarDiag=true;
+        for(diagnosticoWrapper i:diagnosticovisual){
+            if(seleccionadoModalDiagnostico==i.diagnostico&&ojoDiagnosticoElegido==i.ojo){
+                agregarDiag=false;
+            }
+        }
+
+        if(agregarDiag){
+            system.debug('seleccionadoModalDiagnostico'+seleccionadoModalDiagnostico);
+            if(seleccionadoModalDiagnostico!='Ninguno'&&ojoDiagnosticoElegido!='Ninguno'){
+                diagnosticoWrapper DW=new diagnosticoWrapper();
+                DW.diagnostico = seleccionadoModalDiagnostico;
+                DW.ojo         = ojoDiagnosticoElegido;
+                DW.ojoVista=ojoDiagnosticoElegido;
+                diagnosticoVisual.add(DW);
+                System.debug('diagnosticovisual'+diagnosticoVisual);
+
+
+
+                String tratamientoACorroborar;
+                tratamientoACorroborar=diagnosticoTratamiento.get(seleccionadoModalDiagnostico);
+                boolean encontroTratamiento=false;
+
+                for(TratamientoWrapper i: tratamientosVisual ){
+                    if(i.tratamiento==tratamientoACorroborar&&i.ojo==ojoDiagnosticoElegido){
+                        asignaDiagnosticosATratamientos();
+                        encontroTratamiento=true;
+                    }
+                }
+                if(!encontroTratamiento){
+                    TratamientoWrapper TW=new TratamientoWrapper(tratamientoACorroborar, 'Ninguno', 'En Espera' ,'Ninguno', Date.today() );
+                    TW.diagnosticos='This is line 1'+'\n<br/>'+'This is line2';
+                    TW.ojo=ojoDiagnosticoElegido;
+                    if(TW.tratamiento!=null){
+                        if(TW.tratamiento!=''){
+                            tratamientosVisual.add(TW);
+                            divideEnListasTratamientos();
+                        }
+                    }
+
+
+                }
+                seleccionadoModalDiagnostico='Ninguno';
+                ojoDiagnosticoElegido='Ninguno';
+
+                asignaDiagnosticosATratamientos();
+            }
+        }
+
+    }
+
+    public pageReference RegresarBack(){
+        //<<< Elimina Diagnosticos de hoy
+        for(EHR_Condition_SU__c rowDiagnosticos : [SELECT id, Name FROM EHR_Condition_SU__c
+                                                   WHERE Paciente__c = :oEPaciente.Paciente__c
+                                                   AND CreatedDate = TODAY]){
+                                                       delete rowDiagnosticos;
+
+                                                   }
+        //Elimina Diagnosticos de hoy >>>
+
+        PageReference regresar = new PageReference('/apex/EHR_examinacion?IdEtapa='+etapa.id);
+        regresar.setRedirect(true);
+        return regresar;
+    }
+
+    public class diagnosticoWrapper{
+        public string diagnostico{get; set;}
+        public String colorFondo{get; set;}
+        public String bloqueaBotonEliminar{get; set;}
+        public String ojo{get; set;}
+        public String ojoVista{get; set;}
+        public Boolean checkEliminarDiagnostico{get; set;}
+        public diagnosticoWrapper(){
+
+        }
+    }
+
+    public class TratamientoWrapper {
+        public boolean checklist{get; set;}
+        public String TitleTratamiento{get; set;}
+        public String tratamiento {get; set;}
+        // public String prioridad {get; set;}
+        public String estado{get; set;}
+        public Date fechaCreacion{get; set;}
+        public String formatoFecha{get; set;}
+        public String diagnosticos{get; set;}
+        public String colorFondo{get; set;}
+        public List<String>  Estudios{get; set;}
+        public String bloqueaBotonEliminar{get; set;}
+        public String bloqueaInputCheck{get; set;}
+        public String ojo{get; set;}
+        public String Pronostico{get; set;}
+        public String Catarata{get; set;}
+        public boolean Urgente{get; set;}
+        public String comentarioElimina{get; set;}
+        public boolean oportunidadSeguimiento{get; set;}
+        public String nota{get; set;}
+        public list<String>diagnosticosLista{get; set;}
+        public TratamientoWrapper(String tratamientoString, String prioridadString, String estadoString, String ojoString, Date fechaCreacionDate) {
+            tratamiento = tratamientoString;
+            //prioridad = prioridadString;
+            estado=estadoString;
+            ojo=ojoString;
+            fechaCreacion=fechaCreacionDate;
+            formatoFecha=fechaCreacionDate.format();
+        }
+    }
+
+    /*Metodo que regresa una estimacion de acuerdo al tipo que recibe*/
+    public Opportunity ElaboraTipoEstimacion(String tipo){       
+        Opportunity opp         = new Opportunity();
+        RecordType tipoReg      = new RecordType();
+        Pricebook2 listaPrecios = new Pricebook2();
+        Visita__c visita        = new Visita__c();
+        Almacen__c almacen      = new Almacen__c();
+         if(etapa.Configuracion_Flujo__r.Valida_pasa_a_Programacion__c&&tipo.contains('Catarata')){
+            tipo='Campañas';
+             Personal__c JefeProgramacion = new Personal__c();
+             JefeProgramacion=[Select id, Name, UsuarioSalesforce__c from Personal__c where Puesto__c='Jefe de Programación'];
+             opp.OwnerId=JefeProgramacion.UsuarioSalesforce__c;
+             seHaCreadoEstimacionCampana=true;
+        }
+        tipoReg = [SELECT Id,Name, SobjectType, IsActive, IsPersonType FROM RecordType
+                   WHERE IsActive=true AND Name like :tipo LIMIT 1];
+        if(!test.isRunningTest()){
+            listaPrecios=[SELECT Id, Name, Id_Netsuite__c, Isstandard FROM PriceBook2
+                          WHERE Isstandard =true LIMIT 1];
+        }
+        visita=[SELECT id, name, Paciente__c, Paciente__r.Campana__c,
+                Clinica__c, Paciente__r.Unidad_de_negocio__c FROM Visita__c WHERE id=:etapa.Visita__c];
+        System.debug('visita.Clinica__c'+visita.Clinica__c);
+        almacen = [SELECT Id, Name FROM Almacen__c WHERE Clinica__c=:visita.Clinica__c limit 1];
+        system.debug('Visita es '+visita);
+
+        Opp.PriceBook2id         = listaPrecios.id;
+        Opp.RecordTypeId         = tipoReg.id;
+        Opp.CloseDate            = Date.today().addMonths(3);
+        Opp.Busca_Visita__c      = visita.id;
+        Opp.BuscaClinica__c      = visita.Clinica__c;
+        Opp.Almacen__c           = almacen.id;
+        Opp.Unidad_de_negocio__c = visita.Paciente__r.Unidad_de_negocio__c;
+        Opp.CampaignId           = visita.Paciente__r.Campana__c;
+        Opp.AccountId            = visita.Paciente__c;
+
+        if(tipo=='Cirugía Inteligente'){
+            opp.StageName='Estimación Enviada';
+        }else if(tipo=='Optica'||tipo=='Farmacia'){
+            opp.StageName='Potencial Arranque';
+        }else{
+            opp.StageName='Aconsejado';
+        }
+        Opp.Name='Nombre de la estimacion';
+        return Opp;
+    }
+
+    public EHR_Care_Plan_SU__c eliminaCarePlanAsociados(TratamientoWrapper TW){
+        EHR_Care_Plan_SU__c tratamientoRegresar=new EHR_Care_Plan_SU__c();
+        // System.debug('ESTA ES LA LISTA ORIGINAL tratamientoOriginal '+tratamientoOriginal);
+        // System.debug('wrapper '+TW.ojo+' '+TW.tratamiento);
+        for(EHR_Care_Plan_SU__c i:tratamientoOriginal){
+            //  System.debug('original '+i.Ojo__c+' '+i.Plantilla_de_Seguro_Medico__r.Name);
+            if(i.Ojo__c==TW.ojo&&i.Plantilla_de_Seguro_Medico__r.Name ==TW.tratamiento){
+                //   System.debug('SI ENCONTRE EN TRATAMIENTO ORIGINAL');
+                tratamientoRegresar=i;
+            }
+        }
+        return tratamientoRegresar;
+    }
+
+    /* public EHR_Diagnosticos_Template__c creaDiagnosticosAsociados(TratamientoWrapper TW){
+return null;
+}*/
+
+    public EHR_Care_Plan_SU__c creaCarePlanAsociados(TratamientoWrapper TW){
+        EHR_Care_Plan_SU__c CPTemp = new EHR_Care_Plan_SU__c();
+        CPTemp.Ojo__c      = TW.ojo;
+        CPTemp.Paciente__c = etapa.Paciente__c;
+        //CPTempTW.Plan_de_Salud__c
+        CPTemp.Estado__c            = TW.estado;
+        CPTemp.Fecha_Elaboracion__c = Date.today();
+        CPTemp.Pronostico__c        = TW.Pronostico;
+        //CPTempTW.Plantilla_de_Seguro_Medico__c
+        if(personal.Rango__c=='Senior'&&TW.estado=='En Proceso'){
+            CPTemp.Autorizado_por__c=personal.id;
+        }
+        CPTemp.Creado_x__c                 = personal.id;
+        CPTemp.Nota__c                     = TW.nota;
+        CPTemp.Razon_por_la_que_elimina__c = TW.comentarioElimina;
+
+        return CPTemp;
+    }
+
+    public pageReference GuardarPS(){
+        System.debug('------ indicaModalFormularioTratamiento '+indicaModalFormularioTratamiento);
+        System.debug('RANGO PERSONAL '+personal.Rango__c);
+        /* if(indicaModalFormularioTratamiento=='verdadero'&&personal.Rango__c=='Senior'){ Con esto se puede corroborar que se va a mostrar el modal de guardar
+System.debug('Se mostro modal de guardar');
+}*/
+
+        /// <<< MIKE
+        System.debug('tratamientoVisual antes de guardar'+tratamientosVisual);
+        for(TratamientoWrapper i:tratamientosVisual){
+            System.debug('i'+i);
+        }
+        List<String> temDiagnosticos     = new List<String>();
+        List<String> temDiagnosticosDos  = new List<String>();
+        List<String> temDiagnosticosTres = new List<String>();
+
+        List<EHR_Care_Plan_Template_SU__c> templatesTratamientos=new List<EHR_Care_Plan_Template_SU__c>();
+        templatesTratamientos=[SELECT Id, Name FROM EHR_Care_Plan_Template_SU__c];
+
+        //x.EHR_Diagnostico_Template__r.Name;
+        List<EHR_Diagnosticos_Template__c> diagnosticosFinalesParaProcesar=new list<EHR_Diagnosticos_Template__c>();
+
+        //Diagnosticos que ya tenian tratamiento y falta crear estimaciones y problems
+        for(EHR_Condition_SU__c i:diagnosticoConTratamientoOriginal){
+            temDiagnosticosDos.add(i.EHR_Diagnostico_Template__r.Name);
+        }
+        //Diagnosticos que no tenian tratamiento y falta crear estimaciones y problems
+        for(EHR_Condition_SU__c i:diagnosticoSinTratamientoOriginal){
+            temDiagnosticosTres.add(i.EHR_Diagnostico_Template__r.Name);
+        }
+        //Como quedo la lista de los visuales
+        for(diagnosticoWrapper i:diagnosticoVisual){
+            temDiagnosticos.add(i.diagnostico);
+        }
+        //diagnosticos=[SELECT Id, Name, Care_Plan_Template__c ,Care_Plan_Template__r.Name FROM EHR_Diagnosticos_Template__c];
+        diagnosticosFinalesParaProcesar=[SELECT Id, Name, Care_Plan_Template__c ,Care_Plan_Template__r.Name
+                                         FROM EHR_Diagnosticos_Template__c WHERE
+                                         Name in:temDiagnosticos];
+        Plan_de_Salud__c PSnuevo=new Plan_de_Salud__c();//corroboramos si ya existia el plan de salud si no para crearlo
+        if(!habiaPlanSalud){
+
+            PSnuevo.Paciente__c          = etapa.Paciente__c;
+            PSnuevo.Fecha_Elaboracion__c = Date.today();
+            PSnuevo.Name                 = 'Plan de salud 1';
+            insert PSnuevo;
+            System.debug('se ha insertado un plan de saludd');
+        }
+        boolean yaExistiaEseTratamiento = false;
+        List<EHR_Care_Plan_SU__c> planSaludInsertar                               = new List<EHR_Care_Plan_SU__c>();
+        List<EHR_Care_Plan_SU__c> planSaludInsertarConDiagnosticosExistentes      = new List<EHR_Care_Plan_SU__c>();
+        List<EHR_Care_Plan_SU__c> planSaludActualizar                             = new List<EHR_Care_Plan_SU__c>();
+        List<EHR_Care_Plan_SU__c> planSaludActualizarSinIds                       = new List<EHR_Care_Plan_SU__c>(); //Este es una copia del de arriba pero se crea para no hacer update por que no existian
+        List<EHR_Care_Plan_SU__c> planSaludEliminar                               = new List<EHR_Care_Plan_SU__c>();
+        List<EHR_Care_Plan_SU__c> planSaludEnEspera                               = new List<EHR_Care_Plan_SU__c>();//Esta lista es para los care plans que simplemente quedan en espera
+        List<EHR_Care_Plan_SU__c> planSaludEnEsperaConTratamientoName             = new List<EHR_Care_Plan_SU__c>();
+        List<id> planSaludEliminarEstimacionesProblemas                           = new List<id>();
+        map<String,list<EHR_Condition_SU__c>> tratamientosConCondicionesAInsertar = new map<String,list<EHR_Condition_SU__c>>();
+        map<String,list<EHR_Condition_SU__c>> diagnosticosAInsertarEnEspera = new map<String,list<EHR_Condition_SU__c>>();//Usamos esta lista para almacenar los diagnosticos que se insertaran de estado en espera
+        //que son agregados directamente desde la visual force
+
+        for(tratamientoWrapper i:tratamientosVisual){
+            yaExistiaEseTratamiento=false;
+            for(tratamientoWrapper j:tratamientosVisualCopia){ //Ciclo creado para separar los tratamientos de acuerdo a su estado original,
+                //Con esto se puede dividir en cuales se van a actualizar o cuales eliminar
+
+                /*   System.debug('antes '+j.tratamiento+' '+j.ojo+' '+j.estado);
+system.debug(' despues '+i.tratamiento+' '+i.ojo+' '+i.estado);*/
+                //Este if es para los tratamientos que ya existian
+                if(i.tratamiento==j.tratamiento&&i.ojo==j.ojo&&(j.estado=='Por Autorizar'||j.estado=='En Proceso')&&(i.estado=='Eliminado'||i.estado=='En Espera')){
+                    EHR_Care_Plan_SU__c CarePlanTemporal = new EHR_Care_Plan_SU__c();
+                    CarePlanTemporal           = eliminaCarePlanAsociados(j); //con este metodo obtengo el tratamiento original ya con id's
+                    CarePlanTemporal.Ojo__c    = i.ojo;
+                    CarePlanTemporal.Estado__c = i.estado;
+                    CarePlanTemporal.Nota__c   = i.nota;
+                    if(i.Estudios!=null){
+                        String estudioFinal   = '';
+                        boolean primerEstudio = true;
+                        for(String b:i.Estudios){
+                            if(primerEstudio){
+                                estudioFinal  = b;
+                                primerEstudio = false;
+                            }else if(!primerEstudio){
+                                estudioFinal=estudioFinal+';'+b;
+                            }
+
+                        }
+
+                        CarePlanTemporal.Estudios__c=estudioFinal;
+                    }
+                    CarePlanTemporal.Razon_por_la_que_elimina__c=i.comentarioElimina;
+                    planSaludActualizar.add(CarePlanTemporal);
+                    planSaludEliminarEstimacionesProblemas.add(CarePlanTemporal.id);
+                    yaExistiaEseTratamiento=true;
+                } else if(i.tratamiento==j.tratamiento&&i.ojo==j.ojo&&j.estado=='En Espera'&&i.estado=='Eliminado'){
+                    EHR_Care_Plan_SU__c CarePlanTemporal=new EHR_Care_Plan_SU__c();
+                    CarePlanTemporal = eliminaCarePlanAsociados(j); //con este metodo obtengo el tratamiento original ya con id's
+                    CarePlanTemporal.Ojo__c    = i.ojo;
+                    CarePlanTemporal.Estado__c = i.estado;
+                    CarePlanTemporal.Nota__c   = i.nota;
+                    if(i.Estudios!=null){
+                        String estudioFinal='';
+                        boolean primerEstudio=true;
+                        for(String b:i.Estudios){
+                            if(primerEstudio){
+                                estudioFinal=b;
+                                primerEstudio=false;
+                            }else if(!primerEstudio){
+                                estudioFinal=estudioFinal+';'+b;
+                            }
+
+                        }
+                        CarePlanTemporal.Estudios__c=estudioFinal;
+                    }
+                    CarePlanTemporal.Razon_por_la_que_elimina__c=i.comentarioElimina;
+                    if(CarePlanTemporal.id!=null){
+                        planSaludActualizar.add(CarePlanTemporal);
+                    }else{
+                        planSaludActualizarSinIds.add(CarePlanTemporal);//En este se almacenan aquellos care plans que no existian por lo que no hay ID's
+                    }
+                    yaExistiaEseTratamiento=true;
+                }  else if(i.tratamiento==j.tratamiento&&i.ojo==j.ojo&&(j.estado=='En Espera'||j.estado=='Eliminado')&&(i.estado=='En Proceso'||i.estado=='Por Autorizar')){
+                    System.debug('Linea 1031 ');
+                    EHR_Care_Plan_SU__c CarePlanTemporal    = new EHR_Care_Plan_SU__c();
+                    EHR_Care_Plan_SU__c CarePlanTemporalDos = new EHR_Care_Plan_SU__c();
+                    EHR_Care_Plan_SU__c CPObtieneID = new EHR_Care_Plan_SU__c();
+                    CPObtieneID=eliminaCarePlanAsociados(i);
+                    CarePlanTemporal=creaCarePlanAsociados(i);
+                    if(CPObtieneID.id!=null){
+                        System.debug('SI LE ASIGNE UN ID AL CP');
+                        CarePlanTemporal.id=CPObtieneID.id;
+                    }
+                    if(i.Estudios!=null){
+                        String estudioFinal='';
+                        boolean primerEstudio=true;
+                        for(String b:i.Estudios){
+                            if(primerEstudio){
+                                estudioFinal=b;
+                                primerEstudio=false;
+                            }else if(!primerEstudio){
+                                estudioFinal=estudioFinal+';'+b;
+                            }
+
+                        }
+                        CarePlanTemporal.Estudios__c    = estudioFinal;
+                        CarePlanTemporalDos.Estudios__c = estudioFinal;
+                    }
+                    if(habiaPlanSalud){
+                        CarePlanTemporal.Plan_de_Salud__c=planSalud.id;
+                    }else{
+                        CarePlanTemporal.Plan_de_Salud__c=PSnuevo.id;
+                    }
+                    System.debug('templatesTratamientos'+templatesTratamientos);
+                    for(EHR_Care_Plan_Template_SU__c k:templatesTratamientos){
+
+                        if(k.Name==i.tratamiento){
+                            System.debug('k.Name '+k.Name);
+                            System.debug('i.tratamiento'+i.tratamiento);
+                            CarePlanTemporal.Plantilla_de_Seguro_Medico__c=k.id;
+                            if(i.Catarata!=null){
+                                CarePlanTemporal.Cx_Catarata__c=i.Catarata;
+                            }
+                            if(i.Urgente!=null){
+                                CarePlanTemporal.Urgente__c=i.Urgente;
+                            }
+                            System.debug('PASE 1 VEZ');
+                            planSaludInsertar.add(CarePlanTemporal);
+                            CarePlanTemporalDos.Plantilla_de_Seguro_Medico__c=CarePlanTemporal.Plantilla_de_Seguro_Medico__c;
+                            //CarePlanTemporalDos.Plantilla_de_Seguro_Medico__r.Name=k.Name; no se puede
+                            CarePlanTemporalDos.Nota__c = k.Name;
+                            CarePlanTemporalDos.Ojo__c  = CarePlanTemporal.Ojo__c;
+                            if(i.Catarata!=null){
+                                CarePlanTemporalDos.Cx_Catarata__c=i.Catarata;
+                            }
+                            if(i.Urgente!=null){
+                                CarePlanTemporalDos.Urgente__c=i.Urgente;
+                            }
+                            planSaludInsertarConDiagnosticosExistentes.add(CarePlanTemporalDos);
+                            break;
+                        }
+                    }
+                    yaExistiaEseTratamiento=true;
+                }else if(i.tratamiento==j.tratamiento&&i.ojo==j.ojo&&j.estado=='En Espera'&&i.estado=='En Espera'){ //Este if es para crear el tratamiento aunque este en espera
+                    EHR_Care_Plan_SU__c CarePlanTemporal    = new EHR_Care_Plan_SU__c();
+                    EHR_Care_Plan_SU__c CarePlanTemporalDos = new EHR_Care_Plan_SU__c();
+                    CarePlanTemporal=eliminaCarePlanAsociados(i);
+                    if(CarePlanTemporal.id==null){
+                        System.debug('entre al if de careplan temporal igual a nulo');
+                        CarePlanTemporal=creaCarePlanAsociados(i);
+                        if(i.Estudios!=null){
+                            String estudioFinal='';
+                            boolean primerEstudio=true;
+                            for(String b:i.Estudios){
+                                if(primerEstudio){
+                                    estudioFinal=b;
+                                    primerEstudio=false;
+                                }else if(!primerEstudio){
+                                    estudioFinal=estudioFinal+';'+b;
+                                }
+
+                            }
+                            CarePlanTemporal.Estudios__c    = estudioFinal;
+                            CarePlanTemporalDos.Estudios__c = estudioFinal;
+                        }
+                        if(habiaPlanSalud){
+                            CarePlanTemporal.Plan_de_Salud__c=planSalud.id;
+                        }else{
+                            CarePlanTemporal.Plan_de_Salud__c=PSnuevo.id;
+                        }
+                        for(EHR_Care_Plan_Template_SU__c k:templatesTratamientos){
+                            //  System.debug('k.Name '+k.Name);
+                            //  System.debug('i.tratamiento'+i.tratamiento);
+                            if(k.Name==i.tratamiento){
+                                CarePlanTemporal.Plantilla_de_Seguro_Medico__c=k.id;
+                                if(i.Catarata!=null){
+                                    CarePlanTemporal.Cx_Catarata__c=i.Catarata;
+                                }
+                                if(i.Urgente!=null){
+                                    CarePlanTemporal.Urgente__c=i.Urgente;
+                                }
+
+                                CarePlanTemporalDos.Plantilla_de_Seguro_Medico__c=CarePlanTemporal.Plantilla_de_Seguro_Medico__c;
+                                //CarePlanTemporalDos.Plantilla_de_Seguro_Medico__r.Name=k.Name; no se puede
+                                CarePlanTemporalDos.Nota__c = k.Name;
+                                CarePlanTemporalDos.Ojo__c  = CarePlanTemporal.Ojo__c;
+                                if(i.Catarata!=null){
+                                    CarePlanTemporalDos.Cx_Catarata__c=i.Catarata;
+                                }
+                                if(i.Urgente!=null){
+                                    CarePlanTemporalDos.Urgente__c=i.Urgente;
+                                }
+                                planSaludEnEsperaConTratamientoName.add(CarePlanTemporalDos);
+                            }
+                        }
+                        System.debug('no hay nada de nada');
+                    }
+                    // System.debug('Plan En Eperoa lina 1139');
+                    planSaludEnEspera.add(CarePlanTemporal);
+                    System.debug('CarePlanTemporal espera'+CarePlanTemporal);
+                    yaExistiaEseTratamiento=true;
+                }else if(i.tratamiento==j.tratamiento&&i.ojo==j.ojo){
+                    yaExistiaEseTratamiento=true;
+                }
+            }
+            System.debug('yaExistiaEseTratamiento '+yaExistiaEseTratamiento);
+            if(yaExistiaEseTratamiento==false){//este if es para los tratamientos que no existian, por lo tanto se tiene que crear todo su care plan.
+                system.debug('Si se le va a crear un tratamiento');
+                if(i.estado=='Por Autorizar'||i.estado=='En Proceso'){
+                    EHR_Care_Plan_SU__c CarePlanTemporal=new EHR_Care_Plan_SU__c();
+                    CarePlanTemporal=creaCarePlanAsociados(i);
+                    if(i.Estudios!=null){
+                        String estudioFinal='';
+                        boolean primerEstudio=true;
+                        for(String b:i.Estudios){
+                            if(primerEstudio){
+                                estudioFinal=b;
+                                primerEstudio=false;
+                            }else if(!primerEstudio){
+                                estudioFinal=estudioFinal+';'+b;
+                            }
+
+                        }
+                        CarePlanTemporal.Estudios__c=estudioFinal;
+                    }
+                    if(habiaPlanSalud){
+                        CarePlanTemporal.Plan_de_Salud__c=planSalud.id;
+                    }else{
+                        CarePlanTemporal.Plan_de_Salud__c=PSnuevo.id;
+                    }
+                    for(EHR_Care_Plan_Template_SU__c k:templatesTratamientos){
+                        //   System.debug('k.Name '+k.Name);
+                        //   System.debug('i.tratamiento'+i.tratamiento);
+                        if(k.Name==i.tratamiento){
+                            CarePlanTemporal.Plantilla_de_Seguro_Medico__c=k.id;
+                            if(i.Catarata!=null){
+                                CarePlanTemporal.Cx_Catarata__c=i.Catarata;
+                            }
+                            if(i.Urgente!=null){
+                                CarePlanTemporal.Urgente__c=i.Urgente;
+                            }
+                            planSaludInsertar.add(CarePlanTemporal);
+                        }
+                    }
+                    if(i.diagnosticosLista!=null){
+                        if(!i.diagnosticosLista.isEmpty()){
+                            boolean yaPasoElPrimero=false;
+                            for(String r:i.diagnosticosLista){
+                                for(EHR_Diagnosticos_Template__c s:diagnosticosFinalesParaProcesar){
+                                    if(r==s.Name){
+                                        if(yaPasoElPrimero){
+
+                                            list<EHR_Condition_SU__c> listaCondici=new List<EHR_Condition_SU__c>();
+                                            listaCondici=tratamientosConCondicionesAInsertar.get(i.tratamiento);
+                                            EHR_Condition_SU__c condici = new EHR_Condition_SU__c();
+                                            condici.Paciente__c                 = etapa.Paciente__c;
+                                            condici.EHR_Diagnostico_Template__c = s.id;
+                                            condici.Ambos_ojos_cp__c                      = i.ojo;
+                                            listaCondici.add(condici);
+                                            tratamientosConCondicionesAInsertar.put(i.tratamiento, listaCondici);
+                                        }else{
+                                            list<EHR_Condition_SU__c> listaCondici = new List<EHR_Condition_SU__c>();
+                                            EHR_Condition_SU__c condici = new EHR_Condition_SU__c();
+                                            condici.Paciente__c                 = etapa.Paciente__c;
+                                            condici.EHR_Diagnostico_Template__c = s.id;
+                                            condici.Ambos_ojos_cp__c                      = i.ojo;
+                                            listaCondici.add(condici);
+                                            tratamientosConCondicionesAInsertar.put(i.tratamiento, listaCondici);
+                                            yaPasoElPrimero=true;
+                                        }
+
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if(i.estado=='En Espera'){
+                    EHR_Care_Plan_SU__c CarePlanTemporal    = new EHR_Care_Plan_SU__c();
+                    EHR_Care_Plan_SU__c CarePlanTemporalDos = new EHR_Care_Plan_SU__c();
+                    CarePlanTemporal=eliminaCarePlanAsociados(i);
+                    if(CarePlanTemporal.id==null){
+                        System.debug('linea 1172');
+                        CarePlanTemporal=creaCarePlanAsociados(i);
+                        if(i.Estudios!=null){
+                            String estudioFinal='';
+                            boolean primerEstudio=true;
+                            for(String b:i.Estudios){
+                                if(primerEstudio){
+                                    estudioFinal=b;
+                                    primerEstudio=false;
+                                }else if(!primerEstudio){
+                                    estudioFinal=estudioFinal+';'+b;
+                                }
+
+                            }
+                            CarePlanTemporal.Estudios__c    = estudioFinal;
+                            CarePlanTemporalDos.Estudios__c = estudioFinal;
+                        }
+                        if(habiaPlanSalud){
+                            CarePlanTemporal.Plan_de_Salud__c=planSalud.id;
+                        }else{
+                            CarePlanTemporal.Plan_de_Salud__c=PSnuevo.id;
+                        }
+                        for(EHR_Care_Plan_Template_SU__c k:templatesTratamientos){
+                            //  System.debug('k.Name '+k.Name);
+                            //  System.debug('i.tratamiento'+i.tratamiento);
+                            if(k.Name==i.tratamiento){
+                                CarePlanTemporal.Plantilla_de_Seguro_Medico__c=k.id;
+                                if(i.Catarata!=null){
+                                    CarePlanTemporal.Cx_Catarata__c=i.Catarata;
+                                }
+                                if(i.Urgente!=null){
+                                    CarePlanTemporal.Urgente__c=i.Urgente;
+                                }
+
+                                CarePlanTemporalDos.Plantilla_de_Seguro_Medico__c=CarePlanTemporal.Plantilla_de_Seguro_Medico__c;
+                                //CarePlanTemporalDos.Plantilla_de_Seguro_Medico__r.Name=k.Name; no se puede
+                                CarePlanTemporalDos.Nota__c = k.Name;
+                                CarePlanTemporalDos.Ojo__c  = CarePlanTemporal.Ojo__c;
+                                if(i.Catarata!=null){
+                                    CarePlanTemporalDos.Cx_Catarata__c=i.Catarata;
+                                }
+                                if(i.Urgente!=null){
+                                    CarePlanTemporalDos.Urgente__c=i.Urgente;
+                                }
+                                planSaludEnEsperaConTratamientoName.add(CarePlanTemporalDos);
+                            }
+                        }
+                        System.debug('no hay nada de nada');
+                    }
+                    //System.debug('Plan En Esperoa Linea 1274');
+                    planSaludEnEspera.add(CarePlanTemporal);
+                    System.debug('CarePlanTemporal espera'+CarePlanTemporal);
+                    if(i.diagnosticosLista!=null){
+                        if(!i.diagnosticosLista.isEmpty()){
+                            boolean yaPasoElPrimero=false;
+                            for(String r:i.diagnosticosLista){
+                                for(EHR_Diagnosticos_Template__c s:diagnosticosFinalesParaProcesar){
+                                    if(r==s.Name){
+                                        if(yaPasoElPrimero){
+
+                                            list<EHR_Condition_SU__c> listaCondici=new List<EHR_Condition_SU__c>();
+                                            listaCondici=diagnosticosAInsertarEnEspera.get(i.tratamiento+' # '+i.ojo);
+                                            EHR_Condition_SU__c condici = new EHR_Condition_SU__c();
+                                            condici.Paciente__c                 = etapa.Paciente__c;
+                                            condici.EHR_Diagnostico_Template__c = s.id;
+                                            condici.Ambos_ojos_cp__c                      = i.ojo;
+                                            System.debug('condici 2'+condici);
+                                            listaCondici.add(condici);
+
+                                            diagnosticosAInsertarEnEspera.put(i.tratamiento+' # '+i.ojo, listaCondici);
+                                            //tratamientosConCondicionesAInsertar.put(i.tratamiento, listaCondici);
+                                        }else{
+                                            list<EHR_Condition_SU__c> listaCondici = new List<EHR_Condition_SU__c>();
+                                            EHR_Condition_SU__c condici = new EHR_Condition_SU__c();
+                                            condici.Paciente__c                 = etapa.Paciente__c;
+                                            condici.EHR_Diagnostico_Template__c = s.id;
+                                            condici.Ambos_ojos_cp__c                      = i.ojo;
+                                            System.debug('condici 1'+condici);
+                                            listaCondici.add(condici);
+                                            diagnosticosAInsertarEnEspera.put(i.tratamiento+' # '+i.ojo, listaCondici);
+                                            // tratamientosConCondicionesAInsertar.put(i.tratamiento, listaCondici);
+                                            yaPasoElPrimero=true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }//termina ultimo else
+            yaExistiaEseTratamiento=false;
+        }
+        //Se puede descomentar esto para ver las listas como quedaron
+        System.debug('ESTAS SE VAN A ACTUALIZAR');
+        for(EHR_Care_Plan_SU__c i :planSaludActualizar){
+            System.debug('------------ '+i.id);
+            System.debug('--- '+i);
+        }
+        System.debug('Estas se van a eliminar sus problemas');
+        for(id i :planSaludEliminarEstimacionesProblemas){
+            System.debug('i = '+i);
+        }
+
+        system.debug('estas se van a crear todos sus care plans');
+        for(EHR_Care_Plan_SU__c i :planSaludInsertar){
+            System.debug('------------ '+i.id);
+            System.debug('--- '+i);
+        }
+        system.debug('De en espera a en espera');
+        for(EHR_Care_Plan_SU__c i :planSaludEnEspera){
+            System.debug('------------ '+i.id);
+            System.debug('--- '+i);
+        }
+
+        System.debug('planSaludInsertarConDiagnosticosExistentes '+planSaludInsertarConDiagnosticosExistentes);
+
+        System.debug('Estos son los diagnosticos que se van a agregar para los tratamientos nuevos');
+        set<String> llaveMapaDiagnosticos=new set<String>();
+        llaveMapaDiagnosticos=tratamientosConCondicionesAInsertar.keySet();
+        for(String i:llaveMapaDiagnosticos){
+            System.debug('-----'+tratamientosConCondicionesAInsertar.get(i));
+        }
+        System.debug('Estos son los diagnosticos que se van a agregar para los tratamientos En espera que se agregaron en la VF');
+        set<String> llaveMapaDiagnosticosEnEspera=new set<String>();
+        llaveMapaDiagnosticosEnEspera=diagnosticosAInsertarEnEspera.keySet();
+        for(String i:llaveMapaDiagnosticosEnEspera){
+            System.debug('-----'+diagnosticosAInsertarEnEspera.get(i));
+        }
+        if(!planSaludActualizar.isEmpty()){
+            update planSaludActualizar;
+        }
+        upsert planSaludInsertar;
+        upsert planSaludEnEspera;
+        List<EHR_Care_Plan_SU__c> obtieneName=new List<EHR_Care_Plan_SU__c>();
+        List<EHR_Care_Plan_SU__c> obtieneNameEnEspera=new List<EHR_Care_Plan_SU__c>();
+        list<id> identificadores=new list<id>();
+        list<id> identificadoresEnEspera=new list<id>();
+        for(EHR_Care_Plan_SU__c i:planSaludInsertar){
+            identificadores.add(i.id);
+        }
+        for(EHR_Care_Plan_SU__c i:planSaludEnEspera){
+            identificadoresEnEspera.add(i.id);
+        }
+        obtieneName=[select id,Plantilla_de_Seguro_Medico__r.Name,Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c,Ojo__c  from EHR_Care_Plan_SU__c where id in:identificadores];
+        obtieneNameEnEspera=[select id,Plantilla_de_Seguro_Medico__r.Name,Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c,Ojo__c  from EHR_Care_Plan_SU__c where id in:identificadoresEnEspera];
+        System.debug('obtieneName'+obtieneName);
+        System.debug('obtieneNameEnEspera'+obtieneNameEnEspera);
+        list<EHR_Condition_SU__c> insertaCondicionesBuenas=new list<EHR_Condition_SU__c>();
+        try{
+            for(String i:llaveMapaDiagnosticos){
+                for(EHR_Care_Plan_SU__c j :obtieneName){
+                    System.debug('i '+i);
+                    System.debug('j '+j.Plantilla_de_Seguro_Medico__r.Name);
+                    if(i==j.Plantilla_de_Seguro_Medico__r.Name ){
+                        list<EHR_Condition_SU__c> mapaD=new list<EHR_Condition_SU__c>();
+                        mapaD=tratamientosConCondicionesAInsertar.get(i);
+                        for(EHR_Condition_SU__c k:mapaD){
+                            k.EHR_Care_Plan_SU__c =j.id;
+                            insertaCondicionesBuenas.add(k);
+                        }
+                    }
+                }
+
+            }
+
+        }catch(Exception e){
+
+        }
+        insert insertaCondicionesBuenas;
+        list<EHR_Condition_SU__c> condicionesEnEsperaAinsertar=new list<EHR_Condition_SU__c>();
+        if(!diagnosticosAInsertarEnEspera.isEmpty()){//Vamos a insertar las condiciones que resultaron de los tratamientos que agregaron en la VF directamente
+            for(String i:llaveMapaDiagnosticosEnEspera){
+                for(EHR_Condition_SU__c j:diagnosticosAInsertarEnEspera.get(i)){
+                    condicionesEnEsperaAinsertar.add(j);
+                }
+
+            }
+            insert condicionesEnEsperaAinsertar;
+        }
+
+        //Condiciones huerfanas son aquellas condiciones que no tienen un care plan, se genero el care plan pero se tiene que ligar la dolencia al care plan
+        List<EHR_Condition_SU__c> condicionesHuerfanas=new List<EHR_Condition_SU__c>();
+        try{
+            condicionesHuerfanas=[SELECT Name, Id, EHR_Care_Plan_SU__c, EHR_Diagnostico_Template__c,EHR_Diagnostico_Template__r.Name,Ojo__c,Ambos_ojos_cp__c
+                                  FROM EHR_Condition_SU__c
+                                  where EHR_Care_Plan_SU__c=null
+                                  and Paciente__c =:etapa.Paciente__c];
+            System.debug('Las huerfanas son '+condicionesHuerfanas);
+        }catch(Exception e){
+            System.debug('no hay condiciones huerfanas');
+        }
+
+        System.debug('antes de los ciclos planSaludInsertarConDiagnosticosExistentes'+planSaludInsertarConDiagnosticosExistentes);
+        boolean seInsertoArriba=false;
+        if(!condicionesHuerfanas.isEmpty()){
+            System.debug('no fue vacia la lista de huerfanas');
+            for(EHR_Condition_SU__c j:condicionesHuerfanas){
+                seInsertoArriba=false;
+                for(EHR_Care_Plan_SU__c i:planSaludInsertarConDiagnosticosExistentes){
+                    System.debug('mapa '+diagnosticoTratamiento.get(j.EHR_Diagnostico_Template__r.Name));
+                    System.debug('lista pasada '+i.Nota__c);
+
+                    if(diagnosticoTratamiento.get(j.EHR_Diagnostico_Template__r.Name)==i.Nota__c){
+                        System.debug('ya hubo un match con el huerfano' +i.Plantilla_de_Seguro_Medico__r.Name);
+                        for(EHR_Care_Plan_SU__c k:obtieneName){
+                            if(i.Nota__c==k.Plantilla_de_Seguro_Medico__r.Name&&j.Ambos_ojos_cp__c==k.Ojo__c){ //24/02/2017
+                                j.EHR_Care_Plan_SU__c=k.id;
+                                seInsertoArriba=true;
+                            }
+                        }
+                    }
+                }
+                if(!seInsertoArriba){
+                    for(EHR_Care_Plan_SU__c i:planSaludEnEsperaConTratamientoName){
+                        System.debug('mapa '+diagnosticoTratamiento.get(j.EHR_Diagnostico_Template__r.Name));
+                        System.debug('lista pasada '+i.Nota__c);
+
+                        if(diagnosticoTratamiento.get(j.EHR_Diagnostico_Template__r.Name)==i.Nota__c){
+                            System.debug('ya hubo un match con el huerfano En Espera' +i.Plantilla_de_Seguro_Medico__r.Name);
+                            System.debug('obtieneNameEnEspera '+obtieneNameEnEspera);
+                            for(EHR_Care_Plan_SU__c k:obtieneNameEnEspera){
+                                if(i.Nota__c==k.Plantilla_de_Seguro_Medico__r.Name&&j.Ambos_ojos_cp__c==k.Ojo__c){ //24/02/2017
+                                    j.EHR_Care_Plan_SU__c=k.id;
+                                    seInsertoArriba=true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            update condicionesHuerfanas;
+        }
+        //Vamos a generar las estimaciones y meterlas en la lista para insertar oportunidades pero solo si no tienen la restriccion de Ben & Frank
+        System.debug('cuentaConvenioBF'+cuentaConvenioBF );
+        if(!cuentaConvenioBF){
+            listaEstimacionesACargar = new List<Opportunity>();
+            List<String> estimacionesRepetidas=new List<String>(); //en esta lista se guardan aquellas estimaciones que ya fueron creadas para no repetir
+            boolean estaRepetida=false;
+            for(EHR_Care_Plan_SU__c i:obtieneName){
+                Opportunity oportunidad=new Opportunity();
+                if(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!=null ){
+                    if(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!=''){
+          System.debug('i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c!='+i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c);
+                        estaRepetida=false;
+                        if(!estimacionesRepetidas.isEmpty()){
+                            for(String f:estimacionesRepetidas){
+                                if(f==i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c ){
+                                    estaRepetida=true;
+                                }
+                            }
+                        }else{
+                            estimacionesRepetidas.add(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c);
+                        }
+                        if(!estaRepetida){
+                            estimacionesRepetidas.add(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c );
+                            oportunidad=ElaboraTipoEstimacion(i.Plantilla_de_Seguro_Medico__r.tipo_de_estimacion__c );
+                            oportunidad.EHR_Care_Plan_SU__c=i.id;
+
+                            listaEstimacionesACargar.add(oportunidad);
+                        }
+
+                    }
+
+                }
+
+            }
+            try{
+                if(!listaEstimacionesACargar.isEmpty()){
+                    insert listaEstimacionesACargar;
+                    System.debug('listaEstimacionesACargar '+listaEstimacionesACargar);
+                    numeroEstimaciones=listaEstimacionesACargar.size();
+                }
+
+            }catch(Exception e){}
+            System.debug('Estas estimaciones se cargaron '+listaEstimacionesACargar);
+        }
+        //Metodos para eliminar las estimaciones y problemas asociados, estan en esta variable planSaludEliminarEstimacionesProblemas
+        if(!planSaludEliminarEstimacionesProblemas.isEmpty()){
+            List<Opportunity> oportunidadesEliminar = new List <Opportunity>();
+            List<Problem_SU__c> problemasEliminar=new List<Problem_SU__c>();
+            try{
+                oportunidadesEliminar=[SELECT id, EHR_Care_Plan_SU__c FROM Opportunity WHERE EHR_Care_Plan_SU__c in:planSaludEliminarEstimacionesProblemas];
+            }catch(exception e){
+                System.debug('hubo un error al obtener  las oportunidades a eliminar');
+            }
+            try{
+                problemasEliminar=[SELECT Id, Tratamiento__c FROM Problem_SU__c WHERE Tratamiento__c in:planSaludEliminarEstimacionesProblemas];
+            }catch(exception e){
+                System.debug('hubo un error al obtener  los problemas a eliminar');
+            }
+            if(!oportunidadesEliminar.isEmpty()){
+                delete oportunidadesEliminar;
+            }
+            if(!problemasEliminar.isEmpty()){
+                delete problemasEliminar;
+            }
+        }
+
+        //MIKE >>>
+
+        oEPaciente = new Etapa_Paciente__c();
+        lEtapas    = new list<string>();
+        oEPaciente = etapa;
+
+        if(oEPaciente.Etapas_Obligadas__c != null) lEtapas.addall(oEPaciente.Etapas_Obligadas__c.split(';'));
+
+        // <<< Erika Cambia registros de Etapa y Bitacora
+        // Cambia status de Etapa Paciente
+        oEPaciente.Stamp_Fin_Atencion__c = datetime.now();
+        oEPaciente.Estatus__c            = 'Atendido';
+        update oEPaciente;
+        // Actualiza el estatus del personal si es diferente de Atendido
+        if(oPersonal.Estatus_Personal__c == 'Atendiendo')
+            oPersonal.Estatus_Personal__c = 'Libre';
+        update oPersonal;
+        // Inserta Bitacora
+        EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+        classEditForm.setidPaciente_ctr(oEPaciente.Paciente__c);
+        classEditForm.setidEtapa_ctr(oEPaciente.Id);
+        classEditForm.setBitacora(oEPaciente, oPersonal);
+        // Erika Cambia registros de Etapa y Bitacora >>>
+
+        return continuarPS();
+    }
+  
+    public PageReference ContinuarPS(){
+        //<<< Valida si hay estimaciones creadas
+        Boolean pasaOptica     = false;
+        Boolean pasaConsejeria = false;
+
+        for(Opportunity rowEstimacion : [SELECT RecordType.Name, Probability
+                                         FROM Opportunity
+                                         WHERE AccountId = :oEPaciente.Paciente__c
+                                         AND Probability != 0 AND Probability != 100]){
+                                             if(rowEstimacion.RecordType.Name == 'Optica'){
+                                                 pasaOptica = true;
+                                             } else {
+                                                 pasaConsejeria = true;
+                                             }
+                                         }
+        // Valida si hay estimaciones creadas >>>
+        
+        //<<< Valida si se encuentra en el flujo de campanas
+        //Erika siempre tenia este valor en false, solo se va a modificar si se ha creado una estimacion de campana
+        boolean pasaProgramacion=false;
+        if(seHaCreadoEstimacionCampana){
+            if(numeroEstimaciones==1){
+                pasaProgramacion=true;
+                pasaConsejeria=false;
+            }else{
+                pasaProgramacion=true;
+                pasaConsejeria=true;
+            }
+        }
+        // Valida si se encuentra en el flujo de campanas >>>  
+
+        // <<< Erika
+        EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+        classEditForm.setidPaciente_ctr(oEPaciente.Paciente__c);
+        classEditForm.setidEtapa_ctr(oEPaciente.Id);
+        classEditForm.oEPaciente = oEPaciente;
+        classEditForm.lEtapas    = lEtapas;
+        System.debug('lEtapas: ' + lEtapas);
+        return classEditForm.Continuar(pasaOptica, pasaConsejeria, pasaProgramacion, true); // PasaOptica, PasaConsejeria, pasaProgramacion, esPlanTratamiento
+        // Erika >>>
+    }
+    //guarda
+}

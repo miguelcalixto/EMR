@@ -1,0 +1,616 @@
+<apex:component controller="ConsejeriaController"  allowDML="true" >
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+        <apex:includeScript value="/support/console/22.0/integration.js"/>
+        <article class="slds-card fondo-verde-obscuro">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                    <div class="slds-media__body slds-truncate">
+                        <h2>
+                            <span class="slds-text-heading--small font-amarillo">Consejería : {!etapa.Flujo__r.Name}</span>
+                        </h2>
+                    </div>
+                </header>
+                <div class="slds-no-flex">
+                    <input type="button" value="Guardar" class="slds-button slds-button--neutral fondo-amarillo" id="btnGuardar"/>
+                    <!-- <apex:commandButton value="Guardar" status="statuslistas"  id="BOTONGUARDARHOY"
+                                        styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!GuardarConsejeriaSave}"/> -->
+                    <apex:commandButton value="Regresar a Oft" styleclass="slds-button slds-button--neutral" action="{!RegresarEtapaAnterior}" immediate="true" status="status" title="Regresar al Oftalmologo"/>
+                    <apex:commandButton value="Abandono" styleclass="slds-button slds-button--neutral" action="{!AbandonoConsejeria}" immediate="true" status="status"/>
+                </div>
+            </div>
+
+            <div class="slds-card__body slds-theme--default slds-size--1-of-1 ">
+                <div id="FormEdicion" class="slds-form--compound slds-grid slds-grid--vertical slds-nowrap slds-is-editing slds-text-body--regular slds-scrollable" style="height: 450px">
+                    <fieldset id="Diagnostico" class="slds-form--compound">
+                        <div class="slds-form-element__group slds-text-color--default">
+                            <div class="slds-form-element__row">
+                                <div class="slds-size--1-of-2">
+                                    <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 270px">
+                                        <h3 class="slds-section-title--divider">Información del Paciente</h3>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Nombre:</span>
+                                                <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.Name} "/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-2 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Teléfono:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.Phone}"/></strong>
+                                          </div>
+                                          <div class="slds-form-element slds-size--1-of-2 slds-has-divider--bottom">
+                                            <label class="slds-form-element__label" for="input-02">Celular:</label>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.PersonMobilePhone}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Correo Electrónico:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.PersonEmail}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Dirección:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small">{!Paciente.BillingStreet} {!Paciente.N_mero_exterior_de_facturaci_n__c} {!Paciente.Numero_interior__c}, {!Paciente.Colonia_de_facturaci_n__c}, {!Paciente.BillingState}, {!Paciente.BillingCountry} {!Paciente.BillingCity}, {!Paciente.BillingPostalCode}</strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row slds-text-align--center">
+                                          <div class="slds-form-element slds-size--1-of-3">
+                                            <apex:commandButton styleClass="slds-button slds-button--brand fondo-verde-claro"
+                                                                value="Plan de Salud" style="font-size: 8pt;"
+                                                                onclick="sforce.one.navigateToSObject('{!planSalud.id}');"/>
+                                             <apex:commandButton styleClass="slds-button slds-button--brand fondo-verde-claro"
+                                                                value="Consulta" style="font-size: 8pt;"
+                                                                onclick="sforce.one.navigateToSObject('{!consulta.id}');"/>
+                                             <apex:commandLink onclick="abreNuevaVentana();"
+                                                                value="Imprimir Hoja Frontal" style="font-size: 8pt;"
+                                                                styleClass="slds-button slds-button--brand fondo-verde-claro"/>
+                                          </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-size--1-of-2">
+                                    <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 270px">
+                                        <h3 class="slds-section-title--divider">Información de Consulta </h3>
+                                        <div class="slds-form-element__row slds-has-divider--bottom">
+                                          <div class="slds-form-element slds-size--1-of-1">
+                                            <span class="slds-form-element__label">Motivo de Consulta:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Motivo_de_consulta__c}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row slds-has-divider--bottom">
+                                          <div class="slds-form-element slds-size--1-of-1">
+                                            <span class="slds-form-element__label">Motivo de Consulta Medico:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Motivo_de_consulta_Medico__c}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__group slds-text-align--center">
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element font-verde-claro">
+                                                    Ojo Derecho
+                                                </div>
+                                                <div class="slds-form-element ">
+                                                    <span class="slds-text-title"></span>
+                                                </div>
+                                                <div class="slds-form-element font-verde-claro">
+                                                    Ojo Izquierdo
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Esfera_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Esfera</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Esfera_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Cilindro_OD_Ref__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Cilindro</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Cilindro_OI_Ref__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Eje_OD_Ref__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Eje</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Eje_OI_Ref__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Capacidad_visual_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">C.V. Cercana</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Capacidad_visual_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Agudeza_visual_Lejana_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">A.V. Lejana</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Agudeza_visual_Lejana_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Diagnostico_refractivo_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Diagnostico Refractivo</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Diagnostico_refractivo_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element__row">
+                                <div class="slds-size--2-of-2">
+                                  <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 180px">
+                                    <div id="DIag" class="slds-show">
+                                        <table class="slds-table slds-table--bordered slds-table--cell-buffer slds-table--col-bordered slds-no-row-hover">
+                                          <thead>
+                                            <tr class="slds-text-title--caps slds-theme--shade">
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Urgente">Urg.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Fecha de Creacion">Fecha Crea.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Tratamiento">Tratamiento</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Tipo Cirugia">Tipo Cirugía</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Fecha Programacion">Fecha Prog.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Consejero">Consejero</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Información">Información</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Ver Detalles">Detalles</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Ver Estimacion">Estimación</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Importe">Importe</div>
+                                              </th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <apex:repeat value="{!oportunidadVisual}" var="opp" id="TratamientoTablaRepeat" >
+                                                <tr class="{!opp.colorFondo}">
+                                                  <th scope="row" data-label="Urgente">
+                                                    <div class="slds-truncate" title="Urgente"><apex:outputField value="{!opp.tratamiento.Urgente__c}" /></div>
+                                                  </th>
+                                                  <td data-label="Fecha de Creacion">
+                                                    <div class="slds-truncate" title="Fecha de Creacion"><apex:outputText value="{!opp.fechaCreacionD} " /></div>
+                                                  </td>
+                                                  <td data-label="Tratamiento">
+                                                    <div class="slds-truncate" title="Tratamiento"><apex:outputText value="{!opp.nombreTratamiento} - {!opp.ojo} " /></div>
+                                                  </td>
+                                                  <td data-label="Tipo Cirugia">
+                                                    <div class="slds-truncate" title="Tipo Cirugia">
+                                                        <apex:outputPanel id="myRowDos" >
+                                                            <apex:outputText value="{!opp.nombreProblema}"  />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Fecha de Cirugia">
+                                                    <div class="slds-truncate" title="Fecha de Cirugia">
+                                                        <apex:outputPanel id="myRow">
+                                                            <apex:outputText value="{!opp.oportunidad.Fecha_de_Cirugia__c} "   />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Propietario de estimación">
+                                                    <div class="slds-truncate" title="Propietario de Estimacion">
+                                                        <apex:outputText value="{!opp.propietarioEstimacion}" />
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Informacion">
+                                                    <div class="slds-truncate" title="Informacion">
+                                                        <apex:outputField value="{!opp.oportunidad.Probability}" /> <br/> <apex:outputField value="{!opp.oportunidad.RecordType.Name}" /> <br/> <apex:outputField value="{!opp.oportunidad.StageName}" />
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Detaller">
+                                                    <div class="slds-truncate" title="Detalles">
+                                                        <apex:commandButton styleClass="slds-m-top--xx-small slds-button slds-button--neutral " id="BotonMasInformacion" status="statuslistas" style=" font-size: 10px;" reRender="TratamientoTablaRepeat" immediate="true" value="Detalles" onclick="abreModalMasInformacion('{!opp.numeroContador}','{!opp.nombreTratamiento}','{!opp.ojo}');" >
+                                                        </apex:commandButton>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Estimacion">
+                                                    <div class="slds-truncate" title="Estimacion">
+                                                        <apex:commandButton styleClass="slds-m-top--xx-small slds-button slds-button--neutral " value="{!opp.oportunidad.Name}" style="font-size: 8pt" onclick="sforce.one.navigateToSObject('{!opp.identificadorEstimacion}');"/>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Importe">
+                                                    <div class="slds-truncate" title="Importe">
+                                                        <apex:outputField value="{!opp.oportunidad.Amount }" style="width:400px; height:50px;"/>
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                            </apex:repeat>
+                                           </tbody>
+                                        </table>
+                                    </div>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <!-- Aqui inicia modal-->
+                    <div class="facetCargandoStatusListo">
+                        <div class="slds-hide" id="ModalMasInformacion" >
+                            <div role="dialog" tabindex="-1" aria-labelledby="header53" class="slds-modal slds-fade-in-open ">
+                                <div class="slds-modal__container">
+                                    <div class="slds-modal__header fondo-verde-obscuro">
+                                        <a href="javascript:void(0);" class="slds-button slds-modal__close slds-button--icon-inverse" title="Cerrar" id="BotonCerrar">
+                                            <svg class="slds-button__icon slds-button__icon--large" aria-hidden="true">
+
+                                                <use xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                                            </svg>
+                                        </a>
+                                        <span class="slds-assistive-text">Cerrar</span>
+
+                                        <h2 id="header53" class="font-amarillo slds-section__title"><font id="TituloCabecera"></font></h2>
+                                    </div>
+                                    <div class="slds-modal__content slds-p-around--medium primero" >
+                                        <ul >
+                                            <apex:repeat value="{!oportunidadVisual}" var="opp" id="TratamientoTablaModalRepeat" >
+                                                <li class="slds-item slds-text-color--default" >
+                                                    <div class="slds-form-element__group slds-form--compound slds-text-align--center">
+                                                        <div class="slds-form-element__row ">
+                                                            <div class="slds-form-element slds-m-bottom--small slds-hide {!opp.numeroContador}">
+                                                                <h3 class="slds-section-title--divider">Anotaciones Medicas</h3>
+                                                                <span class="slds-text-title slds-text-color--default">
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Dr. que creo</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Creado_x__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Dr. que autorizo</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Autorizado_por__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Urgente</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Urgente__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Nota para Consejero</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Nota__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Consejería</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+                                                                                Eligir Cx.
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select"  value="{!opp.problema.Care_Plan_Template_Problem_SU__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!opp.opcionesCx}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+                                                                                Fecha de Programación
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputPanel rendered="{!opp.consejeriaTratamiento}" >
+                                                                                        <apex:inputField value="{!opp.oportunidad.Fecha_de_Cirugia__c}" styleClass="slds-input"/>
+                                                                                    </apex:outputPanel>
+                                                                                    <apex:outputPanel rendered="{!(not opp.consejeriaTratamiento)}" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.Fecha_de_Cirugia__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Cx. Catarata</label>
+                                                                            <div class="slds-form-element__control">
+                                                                                <strong>
+                                                                                    <apex:outputText value="{!opp.tratamiento.Cx_Catarata__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Estudios</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField value="{!opp.tratamiento.Estudios__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <div class="slds-form-element">
+                                                                                <apex:commandButton styleClass="slds-button slds-button--neutral fondo-verde-claro" value="Agendar Cita" onclick="sforce.one.navigateToURL('{!URLLINK}');"/>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Información de Estimación</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-size--1-of-2">
+                                                                            <table class="slds-table slds-table--bordered slds-table--cell-buffer slds-table--col-bordered slds-no-row-hover">
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Importe">Importe</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowSubtotal" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.Ok_Subtotal_Importe__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Descuentos">Descuentos</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowDescuentos" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.ok_SubtotalDescuentos__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Producto">Producto</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowProducto" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.SubTotalProducto__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Impuestos">Impuestos</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowImps" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.SubTotalImpuestos__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="TOTAL">TOTAL</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowAmount" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.Amount }"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                            </table>
+                                                                        </div>
+                                                                        <div class="slds-size--1-of-2">
+                                                                            <apex:commandButton value="Actualizar Información" status="statuslistas" reRender="{!$Component.TratamientoTablaModalRepeat.myRowSubtotal},{!$Component.TratamientoTablaModalRepeat.myRowDescuentos},{!$Component.TratamientoTablaModalRepeat.myRowProducto},{!$Component.TratamientoTablaModalRepeat.myRowImps},{!$Component.TratamientoTablaModalRepeat.myRowAmount}"
+                                                                                                styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!funcionActualizaEstimacion}"
+                                                                                                />
+                                                                            <br/><br/>
+                                                                            <apex:commandButton styleClass="slds-button slds-button--neutral fondo-verde-claro" value="Abrir Estimación" onclick="sforce.one.navigateToSObject('{!opp.identificadorEstimacion}');"/>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Material de apoyo</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-size--1-of-1">
+                                                                            <ul class="slds-list--horizontal slds-has-dividers--left slds-has-block-links--space slds-wrap">
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/catarata.html" target="_blank" title="Catarata">Catarata</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/cirugia-laser.html" target="_blank" title="Cirugía Láser">Cirugía Láser</a></li>
+                                                                                <!-- <li class="slds-item"><a href="#" target="_blank" title="Cornea">Cornea</a></li> -->
+                                                                                <!-- <li class="slds-item"><a href="#" target="_blank" title="Estrabismo">Estrabismo</a></li> -->
+                                                                                <!-- <li class="slds-item"><a href="#" target="_blank" title="Estudios de Diagnósticos">Estudios de Diagnósticos</a></li> -->
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/glaucoma.html" target="_blank" title="Glaucoma">Glaucoma</a></li>
+                                                                                <!-- <li class="slds-item"><a href="#" target="_blank" title="Macula">Macula</a></li> -->
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/oculoplastica.html" target="_blank" title="Oculoplastica">Oculoplástica</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/oftalmologo-de-ninos.html" target="_blank" title="Oftalmología Niños">Oftalmológica Niños</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/opticas-df-sala-uno.html" target="_blank" title="Óptica">Óptica</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/presbicia.html" target="_blank" title="Presbicia">Presbicia</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/cirugia-de-pterigion.html" target="_blank" title="Pterigion/Carnosidad">Pterigión/Carnosidad</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/queratocono-tratamiento.html" target="_blank" title="Queratocono">Queratocono</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/retina.html" target="_blank" title="Retina">Retina</a></li>
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/retinopatia-diabetica-tratamiento.html" target="_blank" title="Retinopatia Diabetica">Retinopatia Diabetica</a></li>
+                                                                            </ul>
+                                                                        </div>
+                                                                    </div>
+                                                                </span>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </apex:repeat>
+                                        </ul>
+                                    </div>
+                                    <div class="slds-modal__footer fondo-verde-obscuro primero">
+                                        <apex:commandButton value="Aceptar" status="statuslistas" reRender="{!$Component.TratamientoTablaRepeat.myRow},{!$Component.TratamientoTablaRepeat.myRowDos}"
+                                                            styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!funcionActualizaValorCirugia}"
+                                                            onclick="CierraModales();" />
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="slds-backdrop slds-backdrop--open"></div>
+                        </div>
+                    </div><!--AQUI TERMINA MODAL DE AGREGAR TRATAMIENTO-->
+                    <!-- Modal de Advertencia -->
+                    <div id="ModalMensaje">
+                        <div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                          <div class="slds-modal__container">
+                            <div class="slds-modal__header fondo-verde-obscuro">
+                              <h2><span class="slds-text-heading--small font-amarillo">Selecciona</span></h2>
+                            </div>
+                            <div class="slds-modal__content slds-p-around--medium">
+                                <div class="slds-form-element__row">
+                                    <div class="slds-m-left--large slds-media slds-no-space slds-grow slds-text-align--center">
+                                        <span class="slds-media__figure">
+                                            <apex:image url="{!URLFOR($Resource.Alberto_investiga_128)}" width="50%" title="Consejo"/>
+                                        </span>
+                                        <div class="slds-form-element__control slds-text-heading--small slds-text-color--default">
+                                            <span>¿El paciente pasara a Programación?</span>
+                                            <p class="msnCodigoNaranja">viene de <i>CÓDIGO NARANJA</i></p>
+                                            <br/>
+                                            <apex:selectRadio value="{!pasaProgramacion}" styleClass="rdPasaProgramacion slds-m-left--large">
+                                                <apex:selectOption itemValue="true" itemLabel="Si"/>
+                                                <apex:selectOption itemValue="false" itemLabel="No"/>
+                                            </apex:selectRadio>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-modal__footer fondo-verde-obscuro">
+                              <span class="slds-button slds-button--neutral" id="btnCancelar">Cancelar</span>
+                              <span class="slds-button slds-button--neutral fondo-amarillo" id="btnAceptar">Aceptar</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="slds-backdrop slds-backdrop--open"></div>
+                    </div>
+                </div>
+            </div>
+            <apex:actionFunction name="ActualizaOportunidades" action="{!actualizaOportunidades}" reRender="{!$Component.TratamientoTablaRepeat.myRow}" />
+            <apex:actionFunction name="generaGuardado" action="{!GuardarConsejeriaSave}" />
+            <script type="text/javascript">
+
+                $('#btnGuardar').click(function(){
+                    if({!oEPacienteDos.Configuracion_Flujo__r.Valida_pasa_a_Programacion__c} == true){
+                        $(".rdPasaProgramacion").val(true);
+                        $('.msnCodigoNaranja').show();
+                    }else{
+                        $('.msnCodigoNaranja').hide();
+                    }
+                    $('#ModalMensaje').show();
+                        // generaGuardado();
+                });
+
+                $('#btnAceptar').click(function() {
+                    generaGuardado();
+                });
+
+                function CierraModales(){
+                    $("#ModalMasInformacion").removeClass("slds-show");
+                    $("#ModalMasInformacion").addClass("slds-hide");
+                    for (i = 0; i < 10; i++) {
+
+                        $("."+i).removeClass("slds-show");
+                        $("."+i).addClass("slds-hide");
+                    }
+                }
+
+                function agendaCita() {
+                    sforce.console.openPrimaryTab(null, '{!URLLINK}', false,
+                                                  'Agenda cita', openSuccess, 'AgendaCitaTab');
+                }
+
+                function testOpenPrimaryTab(a) {
+                    console.log("a es "+a);
+                    sforce.console.openPrimaryTab(null, a, false,
+                                                  'Estimacion', openSuccess, 'estimacionTab');
+                }
+
+                var openSuccess = function openSuccess(result) {
+                    if (result.success == true) {
+                    } else {
+                    }
+                };
+
+                function abreModalMasInformacion(a,b,c){
+                    console.log(a);
+                    console.log(b);
+                    $("#ModalMasInformacion").removeClass("slds-hide");
+                    $("#ModalMasInformacion").addClass("slds-show");
+                    $("#TituloCabecera").text(b+" - "+c);
+                    $("."+a).removeClass("slds-hide");
+                    $("."+a).addClass("slds-show");
+                }
+
+                $("#BotonCerrar").click(function(){
+                    console.log('cerrar');
+                    $("#ModalMasInformacion").removeClass("slds-show");
+                    $("#ModalMasInformacion").addClass("slds-hide");
+                    for (i = 0; i < 10; i++) {
+
+                        $("."+i).removeClass("slds-show");
+                        $("."+i).addClass("slds-hide");
+                    }
+                })
+
+                function ocultaTodo(){
+                    $(".facetCargandoStatusListo").removeClass("slds-show");
+                    $(".facetCargandoStatusListo").addClass("slds-hide");
+                }
+
+                function muestraTodo(){
+                    $(".facetCargandoStatusListo").addClass("slds-show");
+                    $(".facetCargandoStatusListo").removeClass("slds-hide");
+                }
+
+                function abreNuevaVentana() {
+                    window.open("{!URLHojaFrontal}");
+                }
+            </script>
+        </article>
+    </html>
+</apex:component>

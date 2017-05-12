@@ -1,0 +1,109 @@
+@isTest
+private class TestAdminListasCtrl {
+
+    static testMethod void TestAdminListasCtrl() {
+      Personal__c oP = TestFunctions.crearPersonales(1).get(0);
+      Bitacora_Personal__c oBp = TestFunctions.crearBitacoraPersonal(1,oP.Id).get(0);
+      list<Etapa_Paciente__c> oEp = TestFunctions.crearEtapaPaciente(7,'Preparación');
+      Personal_Cl_nica__c oPC = new Personal_Cl_nica__c(Clinica__c=oEp.get(0).Clinica__c,Personal__c=oP.Id);
+      insert oPC;
+      oEp.get(1).Estatus__c='Abandono';
+      oEp.get(2).Estatus__c='Atendido';
+      oEp.get(2).Personal__c=oP.Id;
+      oEp.get(3).Estatus__c='Fin';
+      oEp.get(4).Etapa__c='Refracción';
+      oEp.get(4).Estatus__c='En Atención';
+      oEp.get(4).Personal__c=oP.Id;
+      oEp.get(5).Estatus__c='En Espera';
+      oEp.get(6).Estatus__c='Dilatación';
+      update oEp;
+      ApexPages.currentPage().getParameters().put('Id', oP.Id);
+      ApexPages.currentPage().getParameters().put('Clinica', 'Roma Norte');
+        AdminListasCtrl oALC = new AdminListasCtrl();
+        oALC.IdEtapa = oEp.get(1).Id;
+       // oALC.RegresarAFlujoAtencion();
+        oALC.IdEtapa = oEp.get(4).Id;
+        oALC.ExpedienteEntregado();
+        oALC.IdEtapa = oEp.get(6).Id;
+        oALC.RegresarAFlujoDilatacion();
+        oALC.IdEtapa = oEp.get(5).Id;
+        oALC.PrimeroEnFila();
+        oALC.username = oP.Name;
+        oALC.password = oP.Password__c;
+        Pagereference oPR = oALC.Login();
+    oPR = oALC.Logout();
+    oALC.Cancelar();
+    oALC.Refrescar();
+    oALC.Refresh();
+    }
+    static testMethod void TestAdminListasCtrlAtencion1() {
+      Personal__c oP = TestFunctions.crearPersonales(1).get(0);
+      Bitacora_Personal__c oBp = TestFunctions.crearBitacoraPersonal(1,oP.Id).get(0);
+      list<Etapa_Paciente__c> oEp = TestFunctions.crearEtapaPaciente(7,'Preparación');
+      Personal_Cl_nica__c oPC = new Personal_Cl_nica__c(Clinica__c=oEp.get(0).Clinica__c,Personal__c=oP.Id);
+      insert oPC;
+      oEp.get(1).Estatus__c='Abandono';
+      oEp.get(2).Estatus__c='Atendido';
+      oEp.get(2).Personal__c=oP.Id;
+      oEp.get(3).Estatus__c='Fin';
+      oEp.get(4).Etapa__c='Refracción';
+      oEp.get(4).Estatus__c='En Atención';
+      oEp.get(4).Personal__c=oP.Id;
+      oEp.get(5).Estatus__c='En Espera';
+      oEp.get(6).Estatus__c='Dilatación';
+      update oEp;
+      ApexPages.currentPage().getParameters().put('Id', oP.Id);
+      ApexPages.currentPage().getParameters().put('Clinica', 'Roma Norte');
+        AdminListasCtrl oALC = new AdminListasCtrl();
+        oALC.IdEtapa = oEp.get(2).Id;
+      //  oALC.RegresarAFlujoAtencion();
+        oALC.IdEtapa = oEp.get(4).Id;
+        oALC.ExpedienteEntregado();
+        oALC.IdEtapa = oEp.get(6).Id;
+        oALC.RegresarAFlujoDilatacion();
+        oALC.IdEtapa = oEp.get(5).Id;
+        oALC.PrimeroEnFila();
+        oALC.username = oP.Name;
+        oALC.password = oP.Password__c;
+        Pagereference oPR = oALC.Login();
+    oPR = oALC.Logout();
+    oALC.Cancelar();
+    oALC.Refrescar();
+    oALC.Refresh();
+    }
+    static testMethod void TestAdminListasCtrlAtencion2() {
+      Personal__c oP = TestFunctions.crearPersonales(1).get(0);
+      Bitacora_Personal__c oBp = TestFunctions.crearBitacoraPersonal(1,oP.Id).get(0);
+      list<Etapa_Paciente__c> oEp = TestFunctions.crearEtapaPaciente(7,'Preparación');
+      Personal_Cl_nica__c oPC = new Personal_Cl_nica__c(Clinica__c=oEp.get(0).Clinica__c,Personal__c=oP.Id);
+      insert oPC;
+      oEp.get(1).Estatus__c='Abandono';
+      oEp.get(2).Estatus__c='Atendido';
+      oEp.get(2).Personal__c=oP.Id;
+      oEp.get(3).Estatus__c='Fin';
+      oEp.get(4).Etapa__c='Refracción';
+      oEp.get(4).Estatus__c='En Atención';
+      oEp.get(4).Personal__c=oP.Id;
+      oEp.get(5).Estatus__c='En Espera';
+      oEp.get(6).Estatus__c='Dilatación';
+      update oEp;
+      ApexPages.currentPage().getParameters().put('Id', oP.Id);
+      ApexPages.currentPage().getParameters().put('Clinica', 'Roma Norte');
+        AdminListasCtrl oALC = new AdminListasCtrl();
+        oALC.IdEtapa = oEp.get(2).Id;
+        oALC.regresarAtendidos();
+        oALC.IdEtapa = oEp.get(4).Id;
+        oALC.ExpedienteEntregado();
+        oALC.IdEtapa = oEp.get(6).Id;
+        oALC.RegresarAFlujoDilatacion();
+        oALC.IdEtapa = oEp.get(5).Id;
+        oALC.PrimeroEnFila();
+        oALC.username = oP.Name;
+        oALC.password = oP.Password__c;
+        Pagereference oPR = oALC.Login();
+    oPR = oALC.Logout();
+    oALC.Cancelar();
+    oALC.Refrescar();
+    oALC.Refresh();
+    }
+}

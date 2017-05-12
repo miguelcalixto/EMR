@@ -1,0 +1,484 @@
+public class ConsejeriaController {
+    public Account Paciente{get; set;}
+    public Etapa_Paciente__c etapa {get; set;}
+    public Etapa_Paciente__c oEPacienteDos{get; set;}//Erika
+    public Personal__c oPersonal{get;set;} // Erika
+    public Plan_de_Salud__c planSalud{get; set;}
+    public EHR_Consulta__c consulta{get; set;}
+    public List<Opportunity> oportunidad{get; set;}
+    public List<EHR_Care_Plan_SU__c> CarePlan{get; set;}
+    public List<oportunidadWrapper> oportunidadVisual{get; set;}
+    public List<SELECTOption> estudiosTemplate{get; set;}
+    public List<string> lEtapasDos{get; set;}
+    public String URLLINK{get; set;}
+    public String tratamientoPaginaExterna{get; set;}
+    public String ojoPaginaExterna{get; set;}
+    public boolean pasaProgramacion{get; set;}
+    public Map<String,String> mUrlParam{get; set;}
+    public String URLHojaFrontal{get; set;}
+
+
+
+    public ConsejeriaController(){
+        pasaProgramacion = false;
+        etapa=new Etapa_Paciente__c();
+        oportunidadVisual=new List<oportunidadWrapper>();
+        inicializaEtapa();
+        inicializaWrapper();
+        inicializaEstudiosTemplate();
+
+        asignaURL();
+        divideEnColoresTipoEstimacion();
+        //Las siguientes líneas se pueden ocupar ya que no se ha definido bien la forma en como podemos ir a una URL externa de salesforce, la consola es beta
+        //URLHojaFrontal='/apex/PDF_EHR_Hoja_Frontal?id='+consulta.id;
+        //URLHojaFrontal='https://www.google.com.mx';
+        //URLHojaFrontal='https://salauno--dev6.cs26.my.salesforce.com/apex/PDF_EHR_Hoja_Frontal?id='+consulta.id;
+        System.debug('ApexPages.currentPage().getUrl()'+ApexPages.currentPage().getUrl());
+
+        String urlHost=ApexPages.currentPage().getHeaders().get('Host');
+        URLHojaFrontal='https://'+urlHost+'/apex/PDF_EHR_Hoja_Frontal?id='+consulta.id;
+        // dos=Apexpages.currentPage().getUrl();
+
+    }
+
+    public void actualizaOportunidades(){
+        System.debug('Actualizar Oportunidades despues de cargar');
+        list<Opportunity> listaUpdate=new list<Opportunity>();
+        for(oportunidadWrapper i:oportunidadVisual){
+            listaUpdate.add(i.oportunidad);
+        }
+        update listaUpdate;
+    }
+
+    public void divideEnColoresTipoEstimacion(){
+        for(oportunidadWrapper i:oportunidadVisual){
+            if(i.oportunidad.RecordType.Name=='Lasik'||i.oportunidad.RecordType.Name=='Cataratas'){
+                i.colorFondo='fondo-amarillo-canario-tipoEstimacion';
+            }else if(i.oportunidad.RecordType.Name=='Retina'){
+                i.colorFondo='fondo-rosa-tipoEstimacion';
+            }else if(i.oportunidad.RecordType.Name=='Oculoplastica'){
+                i.colorFondo='fondo-azul-tipoEstimacion';
+            }else if(i.oportunidad.RecordType.Name=='Glaucoma'){
+                i.colorFondo='fondo-verde-tipoEstimacion';
+            }else if(i.oportunidad.RecordType.Name=='Estrabismo'){
+                i.colorFondo='fondo-amarillo-tipoEstimacion';
+            }else{
+                i.colorFondo='fondo-blanco';
+            }
+        }
+    }
+
+    public void funcionActualizaValorCirugia(){ //actualiza el valor de la cirugia en la tabla principal
+        System.debug('funcion dummy');
+        for(oportunidadWrapper i: oportunidadVisual){
+            i.nombreProblema=i.opcionesProblems.get(i.problema.Care_Plan_Template_Problem_SU__c);
+        }
+    }
+
+    public void funcionActualizaEstimacion(){ //actualiza el valor de la cirugia en la tabla principal
+        System.debug('funcion dummy');
+        for(oportunidadWrapper i: oportunidadVisual){
+            system.debug('i '+i.oportunidad);
+            i.oportunidad=[ SELECT id, Name, AccountId, Problem_SU__c,Problem_SU__r.Care_Plan_Template_Problem_SU__c ,
+                           Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name ,Problem_SU__r.Consejero__r.Name,
+                           Problem_SU__r.Consejero__c,Acuerdo_con_consejero__c,Probability, RecordTypeId, StageName,RecordType.Name,
+                           CreatedDate, Fecha_de_Cirugia__c,CreatedById, CreatedBy.Name,Owner.Name,OwnerId,
+                           EHR_Care_Plan_SU__c,EHR_Care_Plan_SU__r.Nota__c,EHR_Care_Plan_SU__r.Creado_x__c, EHR_Care_Plan_SU__r.Autorizado_por__c,
+                           EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name,EHR_Care_Plan_SU__r.Ojo__c  ,
+                           EHR_Care_Plan_SU__r.Urgente__c, EHR_Care_Plan_SU__r.Cx_Catarata__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c,
+                           EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c,EHR_Care_Plan_SU__r.Estudios__c,
+                           CloseDate, ok_SubtotalDescuentos__c, Ok_Subtotal_Importe__c, SubTotalImpuestos__c, SubTotalProducto__c, Amount
+                           FROM Opportunity where id=:i.oportunidad.id];
+        }
+    }
+
+    public void inicializaEstudiosTemplate(){
+        estudiosTemplate=new List<SELECTOption>();
+
+        Schema.DescribeFieldResult EstudiosCx=EHR_Care_Plan_Template_SU__c.Estudios__c.getDescribe();
+        List<Schema.PicklistEntry> plp = EstudiosCx.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+
+            system.debug('Estudios'+f.getLabel());
+            system.debug('Estudios'+f.getValue());
+            System.debug('estudios '+f);
+            estudiosTemplate.add(new SELECTOption(f.getLabel(), f.getValue()));
+        }
+    }
+
+    public void inicializaWrapper(){
+        //En esta funcion vamos a agrupar todos los valores en una clase Wrapper (inner class) esta lleva por nombre oportunidadWrapper,
+        //aqui vamos a ligar la cirugia, plan de tratamiento a su respectiva oportunidad
+        System.debug('inicializa wrapper');
+        Integer k=0;
+
+        List<id> identificadoresTem=new List<id>();
+    //Se obtienen los distintos Id's de los templates de planes de tratamiento para los planes de tratamiento
+        for(Opportunity opp:oportunidad){
+            identificadoresTem.add(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c);
+        }
+
+        List<Care_Plan_Template_Problem_SU__c> plantillasProblemasLista=new List<Care_Plan_Template_Problem_SU__c>();
+        plantillasProblemasLista=[SELECT id, Care_Plan_Template_SU__c, Name FROM Care_Plan_Template_Problem_SU__c
+                                  where Care_Plan_Template_SU__c in:identificadoresTem ];
+    //Se junta todo dentro del Wrapper: Plan de tratamiento, cirugias, etc.
+        for(Opportunity opp:oportunidad){
+            oportunidadWrapper OW=new oportunidadWrapper(opp.CreatedDate);
+
+            Opportunity opo=opp;
+            System.debug('probability'+opp.Probability);
+            System.debug('record type '+opp.RecordType.Name);
+            System.debug('stage name'+opp.StageName);
+            OW.oportunidad=opo;
+
+            System.debug('AgendaTX__c'+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c);
+            if(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c!='Consejeria'){
+                OW.consejeriaTratamiento=false;
+            }
+            else{
+                OW.consejeriaTratamiento=true;
+            }
+            System.debug('consejeriaTratamiento '+OW.consejeriaTratamiento);
+            System.debug('multipicklist'+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c);
+            String cadenaMultipicklist=opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c;
+            List<String> separadorMultipick=new List<String>();
+            System.debug('cadenaMultipicklist'+cadenaMultipicklist);
+            try{
+                separadorMultipick=cadenaMultipicklist.split(';');
+                OW.opcionEstudiosPick=new List<String>();
+            }catch(Exception e){
+                System.debug('no habia estudios predefinidos');
+            }
+            for(String h:separadorMultipick){
+                OW.opcionEstudiosPick.add(h);
+            }
+
+
+
+            EHR_Care_Plan_SU__c tratTemporal = new EHR_Care_Plan_SU__c();
+            tratTemporal.id                            = opp.EHR_Care_Plan_SU__c;
+            tratTemporal.Nota__c                       = opp.EHR_Care_Plan_SU__r.Nota__c;
+            tratTemporal.Creado_x__c                   = opp.EHR_Care_Plan_SU__r.Creado_x__c;
+            tratTemporal.Autorizado_por__c             = opp.EHR_Care_Plan_SU__r.Autorizado_por__c;
+            tratTemporal.Plantilla_de_Seguro_Medico__c = opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c;
+            tratTemporal.Urgente__c                    = opp.EHR_Care_Plan_SU__r.Urgente__c;
+            tratTemporal.Estudios__c                   = opp.EHR_Care_Plan_SU__r.Estudios__c;
+            tratTemporal.Cx_Catarata__c                = opp.EHR_Care_Plan_SU__r.Cx_Catarata__c;
+            tratTemporal.Estudios__c                   = opp.EHR_Care_Plan_SU__r.Estudios__c;
+            system.debug(' hi '+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name);// tratTemporal.EHR_Care_Plan_Template_SU__r.Name= opp.EHR_Care_Plan_SU__r.EHR_Care_Plan_Template_SU__r.Name;
+            OW.tratamiento       = tratTemporal;
+            OW.nombreTratamiento = opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name;
+            OW.ojo               = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+            OW.opcionesCx        = new List<SELECTOption>();
+            OW.opcionesProblems  = new Map<id,String>();
+            OW.opcionesCx.add(new SELECTOption('', 'Ninguno'));
+            for(Care_Plan_Template_Problem_SU__c i:plantillasProblemasLista){
+                if(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c==i.Care_Plan_Template_SU__c){
+                    OW.opcionesCx.add(new SELECTOption(i.id, i.Name));
+                    OW.opcionesProblems.put(i.id, i.Name);
+                }
+            }
+
+            if(opp.Problem_SU__c!=null){
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                problTemporal.id                               = opp.Problem_SU__c;
+                problTemporal.Ojo_a_Operar__c                  = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                problTemporal.Care_Plan_Template_Problem_SU__c = opp.Problem_SU__r.Care_Plan_Template_Problem_SU__c;
+                // problTemporal.Acuerdo_de_Consejero__c=opp.Acuerdo_con_consejero__c;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                OW.personaConsejero      = opp.Problem_SU__r.Consejero__r.Name;
+                OW.propietarioEstimacion = opp.Owner.Name;
+                OW.problema=problTemporal;
+                if(opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name!=null){
+                    OW.nombreProblema=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                }
+
+            }else{
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                // problTemporal.Name='Problema';
+                problTemporal.Ojo_a_Operar__c = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+
+
+                Date fechaParaComparar=opo.CreatedDate.Date();
+                if(fechaParaComparar==Date.today()){
+                    OW.oportunidad.OwnerId   = UserInfo.getUserId();
+                    OW.propietarioEstimacion = UserInfo.getName();
+                    OW.personaConsejero      = UserInfo.getName();
+                }
+
+                OW.problema              = problTemporal;
+            }
+            OW.identificadorEstimacion = opp.id;
+            OW.fechaProgramacion       = opp.Fecha_de_Cirugia__c;
+            OW.numeroContador          = k + 1;
+            k = k + 1;
+            oportunidadVisual.add(OW);
+
+        }
+    }
+
+    public pageReference asignaURLPDF(){
+        //Se asigna la URL al link de Hoja Frontal
+
+        System.debug('/apex/PDF_EHR_Hoja_Frontal?id='+consulta.id);
+        PageReference pg=new PageReference('/apex/PDF_EHR_Hoja_Frontal?id='+consulta.id);
+        return pg;
+    }
+
+    public void inicializaEtapa(){
+        //Se obtienen todos los valores con los que trabaja la VF como la estimación con su respectos planes de tratamiento y cirugías, la etapa, consulta,
+        //Plan de salud, Px
+        String idEtapa;
+        Paciente    = new Account();
+        oportunidad = new List<Opportunity>();
+        CarePlan    = new List<EHR_Care_Plan_SU__c>();
+        planSalud   = new Plan_de_Salud__c ();
+        consulta    = new EHR_Consulta__c ();
+        mUrlParam   = ApexPages.currentPage().getParameters();
+
+        if(mUrlParam.containsKey('IdEtapa')){
+            idEtapa=mUrlParam.get('IdEtapa');
+        }else{
+            //lanzar una excepcion
+        }
+
+        // <<< Erika
+        // Obten variable oEtapaPacienteDos
+        for(Etapa_Paciente__c oP : [SELECT id,Personal__c,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                                    Visita__c,Clinica__c,Flujo__c,Flujo__r.Name, Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                                    Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c, Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c,
+                                    Configuracion_Flujo__r.Continuar_con_paciente__c,Configuracion_Flujo__r.Valida_pasa_a_Programacion__c,Stamp_Inicio_Dilatacion__c
+                                    FROM Etapa_Paciente__c WHERE id= :idEtapa]){
+                                        oEPacienteDos = oP;
+                                    }
+        //Busca Pesonal clinica
+        for(Personal__c p:[SELECT id,Estatus_Personal__c,Etapas__c,Puesto__c FROM Personal__c WHERE Id=:oEPacienteDos.Personal__c]){
+            oPersonal = p;
+        }
+        // Erika >>>
+
+
+        etapa    = [SELECT id,Personal__c,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                    Visita__c,Clinica__c,Flujo__c,Flujo__r.Name, Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,
+                    Configuracion_Flujo__r.Secciones_a_modificar_Historia_Clinica__c, Configuracion_Flujo__r.Secciones_a_ver_Historia_Clinica__c,
+                    Configuracion_Flujo__r.Continuar_con_paciente__c,Stamp_Inicio_Dilatacion__c
+                    FROM Etapa_Paciente__c WHERE id=:idEtapa];
+        Paciente = [SELECT id, Name,FirstName, LastName, Phone,PersonMobilePhone, PersonEmail,BillingStreet, BillingCity, BillingState, BillingCountry, BillingPostalCode, N_mero_exterior_de_facturaci_n__c, Numero_interior__c, Colonia_de_facturaci_n__c FROM Account WHERE id=:etapa.Paciente__c ];
+        oportunidad = [SELECT id, Name, AccountId, Problem_SU__c,Problem_SU__r.Care_Plan_Template_Problem_SU__c ,
+                       Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name ,Problem_SU__r.Consejero__r.Name,
+                       Problem_SU__r.Consejero__c,Acuerdo_con_consejero__c,Probability, RecordTypeId, StageName,RecordType.Name,
+                       CreatedDate, Fecha_de_Cirugia__c,CreatedById, CreatedBy.Name,Owner.Name,OwnerId,
+                       EHR_Care_Plan_SU__c,EHR_Care_Plan_SU__r.Nota__c,EHR_Care_Plan_SU__r.Creado_x__c, EHR_Care_Plan_SU__r.Autorizado_por__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name,EHR_Care_Plan_SU__r.Ojo__c  ,
+                       EHR_Care_Plan_SU__r.Urgente__c, EHR_Care_Plan_SU__r.Cx_Catarata__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c,EHR_Care_Plan_SU__r.Estudios__c,
+                       CloseDate, ok_SubtotalDescuentos__c, Ok_Subtotal_Importe__c, SubTotalImpuestos__c, SubTotalProducto__c, Amount
+                       FROM Opportunity
+                       WHERE AccountId=:Paciente.id AND EHR_Care_Plan_SU__c != null AND RecordType.Name != 'Optica'
+                       ORDER BY CreatedDate  ];
+        CarePlan = [SELECT Id, Name, Paciente__c ,Plantilla_de_Seguro_Medico__c ,
+                    Ojo__c,Estado__c ,Plantilla_de_Seguro_Medico__r.Name
+                    FROM EHR_Care_Plan_SU__c WHERE Paciente__c = :Paciente.id];
+        planSalud = [SELECT Id, Name FROM Plan_de_Salud__c WHERE Paciente__c = :Paciente.id limit 1];
+        try{
+             consulta = [SELECT Id, Name, CreatedDate,Agudeza_visual_Lejana_OD__c, Agudeza_visual_Lejana_OI__c,
+                        Motivo_de_consulta__c,Motivo_de_consulta_Medico__c,Diagnostico_refractivo_OD__c,Diagnostico_refractivo_OI__c ,
+                        Capacidad_visual_OD__c,Capacidad_visual_OI__c,Esfera_OD__c,Cilindro_OD_Ref__c,Eje_OD_Ref__c,
+                        Adicion__c,
+            Esfera_OI__c,Cilindro_OI_Ref__c,Eje_OI_Ref__c
+                        FROM EHR_Consulta__c WHERE CreatedDate = TODAY AND Paciente__c = :Paciente.id limit 1];//CreatedDate = TODAY AND
+        }catch(exception e){
+
+        }
+        System.debug('etapa '+etapa);
+        System.debug('Paciente '+Paciente);
+        System.debug('oportunidad'+oportunidad);
+        // System.debug('CarePlan'+CarePlan);
+    }
+
+    public pageReference abreEstimacion(){
+        //Función que nos ayuda a obtener la URL de la pagina para poder ir a la estimacion
+        PageReference pg ;
+        for(oportunidadWrapper i:oportunidadVisual){
+            if(i.nombreTratamiento==tratamientoPaginaExterna&&i.ojo==ojoPaginaExterna){
+                pg=new PageReference('/'+i.identificadorEstimacion);
+                System.debug('antes de regresar es '+i.identificadorEstimacion);
+                break;
+            }
+        }
+
+        return pg;
+    }
+
+    public void asignaURL(){
+        //Se asigna la URL para agendar una cita, es variable dependiendo de los campos de numero, email, nombre y apellidos.
+        if(paciente.PersonMobilePhone==null && paciente.PersonEmail==null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        } else if(paciente.PersonMobilePhone==null&&paciente.PersonEmail!=null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&email='+paciente.PersonEmail+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        } else if(paciente.PersonMobilePhone!=null&&paciente.PersonEmail==null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&phone='+paciente.PersonMobilePhone+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        }else{
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&phone='+paciente.PersonMobilePhone+'&email='+paciente.PersonEmail+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        }
+        System.debug('URLLINK'+URLLINK);
+    }
+
+    public pageReference GoToEstimacion(){
+        //Funcion para ir a la Estimacion asociada
+        PageReference page = new PageReference(URLLINK);
+        return page;
+    }
+
+    public class oportunidadWrapper{
+    //Inner class para agrupar los datos, todo gira en cuanto a las estimaciones
+        public Date fechaCreacionD{get; set;}
+        public EHR_Care_Plan_SU__c tratamiento{get; set;}
+        public Opportunity oportunidad{get; set;}
+        public String nombreTratamiento{get; set;}
+        public Date fechaProgramacion {get; set;}
+        public String propietarioEstimacion{get; set;}
+        public String personaConsejero{get; set;}
+        public ID identificadorEstimacion{get; set;}
+        public Problem_SU__c problema{get; set;}
+        public String ojo{get; set;}
+        public Integer numeroContador{get; set;}
+        public List<SELECTOption> opcionesCx{get; set;}
+        public map<id,String> opcionesProblems{get; set;}
+        public String nombreProblema{get; set;}
+        public boolean consejeriaTratamiento{get; set;}
+        public List<String> opcionEstudiosPick {get; set;}
+        public String colorFondo{get; set;}
+
+        public oportunidadWrapper(DateTime dT){
+            fechaCreacionD=date.newinstance(dT.year(), dT.month(), dT.day());
+        }
+    }
+
+    public pageReference AbandonoConsejeria(){
+        // <<< Erika
+        EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+        classEditForm.setidPaciente_ctr(oEPacienteDos.Paciente__c);
+        classEditForm.setidEtapa_ctr(oEPacienteDos.Id);
+        classEditForm.oEPaciente = oEPacienteDos;
+        return classEditForm.Abandono();
+        // Erika >>>
+    }
+
+    public class problemaOportunidadWrapper{
+        //Funcion auxiliar en el guardado para guardar temporalmente el id del problema para posteriormente asociarla a la respectiva estimacion
+        public Problem_SU__c problema{get; set;}
+        public Opportunity oportunidad{get; set;}
+
+        public problemaOportunidadWrapper(Problem_SU__c pr,Opportunity op){
+            this.problema=pr;
+            this.oportunidad=op;
+        }
+
+    }
+
+    public pageReference GuardarConsejeriaSave(){
+        System.debug('pasaProgramacion: '+pasaProgramacion);
+        //MIKE
+        List<Problem_SU__c> problemasAgregar=new List<Problem_SU__c>();
+        List<Opportunity> oportunidadesActualizar=new List<Opportunity>();
+        List<problemaOportunidadWrapper> listaPOW=new List<problemaOportunidadWrapper>();
+        Map<Problem_SU__c, Opportunity> mapaProblemaOportunidad=new map<Problem_SU__c, Opportunity>();
+        //Separamos en una lista los problemas para poderlos Insertar/Actualizar
+        for(oportunidadWrapper i:oportunidadVisual){
+            System.debug('i.problema.Care_Plan_Template_Problem_SU__c'+i.problema.Care_Plan_Template_Problem_SU__c);
+            if(i.problema.Care_Plan_Template_Problem_SU__c==null){
+                ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar una Cx o tratamiento a '+i.nombreTratamiento));
+                if(i.problema.Care_Plan_Template_Problem_SU__c==''){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar una Cx o tratamiento a '+i.nombreTratamiento));
+                    return null;
+                }
+                return null;
+            }
+            i.problema.Paciente__c=etapa.Paciente__c;
+            problemasAgregar.add(i.problema);
+          //  mapaProblemaOportunidad.put(i.problema, i.oportunidad);
+            problemaOportunidadWrapper POW = new problemaOportunidadWrapper(i.problema, i.oportunidad);
+            listaPOW.add(POW);
+        }
+        upsert problemasAgregar;
+        System.debug('problemasAgregar'+problemasAgregar);
+
+
+        /*
+        set<Problem_SU__c> llaveMapa=new set<Problem_SU__c>();
+        llaveMapa=mapaProblemaOportunidad.keySet();
+        for(Problem_SU__c i:llaveMapa){
+            Opportunity oppi=new opportunity();
+            oppi=mapaProblemaOportunidad.get(i);
+            oppi.Problem_SU__c=i.id;
+            oportunidadesActualizar.add(oppi);
+        }*/
+
+        //Asociamos el problema Insertado/Actualizado anteriormente con su respectiva estimacion, esta relacion se logra mantener gracias al wrapper problemaOportunidadWrapper
+        System.debug('listaPOW2 '+listaPOW);
+        for(problemaOportunidadWrapper i:listaPOW){
+      Opportunity oppi=new opportunity();
+            oppi=i.oportunidad;
+            oppi.Problem_SU__c=i.problema.id;
+            oportunidadesActualizar.add(oppi);
+        }
+        System.debug('oportunidadesActualizar'+oportunidadesActualizar);
+        update oportunidadesActualizar;
+        //MIKE
+        //if(false){
+        //oEPaciente=new Etapa_Paciente__c();
+        lEtapasDos= new list<string>();
+        oEPacienteDos=etapa;
+
+
+
+        System.debug('1.1 Etapas_Obligadas__c: '+oEPacienteDos.Etapas_Obligadas__c);
+        if(oEPacienteDos.Etapas_Obligadas__c != null) lEtapasDos.addall(oEPacienteDos.Etapas_Obligadas__c.split(';'));
+        System.debug('1.2 Etapas_Obligadas__c: '+oEPacienteDos.Etapas_Obligadas__c);
+
+        // <<< Erika Cambia registros de Etapa y Bitacora
+            // Cambia status de Etapa Paciente
+            oEPacienteDos.Stamp_Fin_Atencion__c = datetime.now();
+            oEPacienteDos.Estatus__c            = 'Atendido';
+            update oEPacienteDos;
+            // Actualiza el estatus del personal si es diferente de Atendido
+            if(oPersonal.Estatus_Personal__c == 'Atendiendo')
+                oPersonal.Estatus_Personal__c = 'Libre';
+            update oPersonal;
+            // Inserta Bitacora
+            EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+            classEditForm.setidPaciente_ctr(oEPacienteDos.Paciente__c);
+            classEditForm.setidEtapa_ctr(oEPacienteDos.Id);
+            classEditForm.setBitacora(oEPacienteDos, oPersonal);
+        // Erika Cambia registros de Etapa y Bitacora >>>
+
+        return continuarDos();
+    }
+
+    public PageReference ContinuarDos(){
+        // <<< Erika
+        EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+        classEditForm.setidPaciente_ctr(oEPacienteDos.Paciente__c);
+        classEditForm.setidEtapa_ctr(oEPacienteDos.Id);
+        classEditForm.oEPaciente = oEPacienteDos;
+        classEditForm.lEtapas    = lEtapasDos;
+        System.debug('lEtapasDos: ' + lEtapasDos);
+        return classEditForm.Continuar(false, false, pasaProgramacion, false); // PasaOptica, PasaConsejeria, PasaProgramacion, esPlanTratamiento
+        // Erika >>>
+    }
+
+    public PageReference RegresarEtapaAnterior(){
+        // <<< Erika
+        EHR_EditFormCtrl classEditForm = new EHR_EditFormCtrl();
+        classEditForm.setidPaciente_ctr(oEPacienteDos.Paciente__c);
+        classEditForm.setidEtapa_ctr(oEPacienteDos.Id);
+        classEditForm.oPersonal = oPersonal;
+        classEditForm.oEPaciente = oEPacienteDos;
+        classEditForm.lEtapas    = lEtapasDos;
+        System.debug('lEtapasDos: ' + lEtapasDos);
+        return classEditForm.RegresarEtapaAnterior();
+        // Erika >>>
+    }
+}

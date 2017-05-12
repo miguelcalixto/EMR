@@ -1,0 +1,638 @@
+public without sharing class AdminListasCtrl {
+  //Variables para administrar login
+    public Personal__c oP{get;set;}
+    public Boolean bLogin{get;set;}
+    public String username{get;set;}
+    public String password{get;set;}
+    public String msjerror{get;set;}
+    public String nPersonal{get;set;}
+    public String sPuesto{get;set;}
+    public String IdEtapa{get;set;}
+    public String statusPersonal{get;set;}
+    public String idPx{get;set;}
+  //Variables para administrar la lista de espera
+    public Boolean bTieneEtapas{get;set;}
+    public String sPer{get;set;}
+    public String sCons{get;set;}
+    public String sEtapa{get;set;}
+    public String sEtapaAtendido{get;set;}
+      public String sPersonal{get;set;}
+      public String sClinica{get;set;}
+      public String sColorPxTEExedido{get;set;}
+      public String IDreporteFlujo{get;set;}
+      public Integer iPxAtendidosMayores{get;set;}
+      public Integer iPxTEExedido{get;set;}
+      public Integer PxPorLlegar{get;set;}
+      public List<string> lEtapas{get;set;}
+      public List<string> lTabs{get;set;}
+      public List<SelectOption> lSOEtapas{get;set;}
+      public List<SelectOption> rowsEtapasAtendidos{get;set;}
+    public List<Etapa_Paciente__c> lEtapasAb{get;set;}
+    public List<Etapa_Paciente__c> lEtapasDi{get;set;}
+    public List<Etapa_Paciente__c> lEtapasAt{get;set;}
+    public List<Etapa_Paciente__c> lEtapasAtendidos{get;set;}
+    public List<Etapa_Paciente__c> lEtapasAtendidosTemp{get;set;}
+    public List<Etapa_Paciente__c> lEtapasEEsp{get;set;}
+    public List<Etapa_Paciente__c> lEtapasEEsptemp{get;set;}
+    public List<Bitacora_Personal__c> lBitacoras{get;set;}
+      public List<String> lPersonal{get;set;}
+      public List<SelectOption> lSOPersonal{get;set;}
+      public List<String> lClinicas{get;set;}
+      public List<SelectOption> lSOClinicas{get;set;}
+    public List<SelectOption> lSOConsultorios{get;set;}
+    public Map<string,string> mUrlParam {get;set;}
+      public Map<string,Configuracion_Flujo__c> mRangos{get;set;}
+      public Map<String,List<SelectOption>> mSOPersonal{get;set;}
+      public Map<String,List<SelectOption>> mSOClinicas{get;set;}
+      public Map<string,wrpEstadisticas> mEstadisticas{get;set;}
+
+    public AdminListasCtrl(){
+    Schema.DescribeFieldResult fieldResult = Clinica__c.Consultorios__c.getDescribe();//Schema.sObjectType.Clinica__c.fields.Consultorios__c.getSObjectField().getDescribe();
+    List<Schema.PicklistEntry> values      = fieldResult.getPicklistValues();
+    //System.debug('values:' + values);
+    for( Schema.PicklistEntry v : values) {
+      //System.debug('Picklist Value Label:' + v.getLabel());
+      //System.debug('Picklist API Name:' + v.getValue());
+    }
+    mUrlParam = ApexPages.currentPage().getParameters();
+    lTabs = new list<string>{'PX en Dilatación','Entrega de Expedientes','PX en Espera','PX en Abandono','PX Atendidos y Finalizados'};
+    username  = ' -- Seleccione --';
+    password  = '';
+    msjerror  = '';
+    nPersonal = '';
+    sPersonal = '';
+    sClinica  = '-- Seleccione --';
+    IdEtapa   = '';
+    bLogin    = true;
+    BuscaPersonal();
+    if(mUrlParam.containsKey('Id')){
+      Inicializa();
+    }
+  }
+
+
+  public void Refresh() {
+    lEtapasEEsptemp = new list<Etapa_Paciente__c>();
+    if(sEtapa == null || sEtapa == '-- Seleccione --')
+      lEtapasEEsptemp.addall(lEtapasEEsp);
+    else{
+      for(Etapa_Paciente__c oE:lEtapasEEsp){
+        if(oE.Etapa__c== sEtapa)
+          lEtapasEEsptemp.add(oE);
+      }
+    }
+
+    lEtapasAtendidosTemp = new list<Etapa_Paciente__c>();
+    if(sEtapaAtendido==null || sEtapaAtendido=='-- Seleccione --'){
+      lEtapasAtendidosTemp.addall(lEtapasAtendidos);
+    } else {
+      for(Etapa_Paciente__c oE:lEtapasAtendidos){
+        //system.debug('oE.Etapa__c: '+oE.Etapa__c + ' = '+lEtapasAtendidos);
+        if(oE.Etapa__c == sEtapaAtendido){
+          //system.debug('---- Entra en filtro');
+          lEtapasAtendidosTemp.add(oE);
+        }
+      }
+    }
+  }
+
+  public void Inicializa(){
+    for(Personal__c p:[SELECT id,Name,Foto__c, Puesto__c,Min_TAtencion__c,Max_TAtencion__c,Min_TEspera__c,Max_TEspera__c
+              FROM Personal__c WHERE Id=:mUrlParam.get('Id')]){
+      oP = p;
+    }
+    lSOConsultorios   = new List<SelectOption>();
+    lSOConsultorios.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+    set<string> setPer = new set<string>();
+
+        for(Bitacora_Personal__c oB:[SELECT Id, Name, Consultorio__c,Estatus__c,Hora__c,
+                       Personal__c, Personal__r.Name, Fecha_Login__c, Fecha_Logout__c, Estado__c
+                   FROM Bitacora_Personal__c
+                   WHERE Fecha__c = TODAY
+                   AND Clinica__c =:mUrlParam.get('Clinica')
+                   order by Personal__c,Createddate DESC]){
+      if(sPer != oB.Personal__r.Name){
+        lSOPersonal.add(new SelectOption(oB.Personal__r.Name, oB.Personal__r.Name));
+        sPer = oB.Personal__r.Name;
+      }
+      if(!setPer.contains(oB.Consultorio__c)){
+        lSOConsultorios.add(new SelectOption(oB.Consultorio__c, oB.Consultorio__c));
+        setPer.add(oB.Consultorio__c);
+      }
+    }
+    sPer      = '-- Seleccione --';
+    sCons     = '-- Seleccione --';
+    sEtapa    = '-- Seleccione --';
+    bLogin    = false;
+    nPersonal = oP.Name;
+    sPuesto   = oP.Puesto__c;
+    sClinica  = mUrlParam.get('Clinica');
+    BuscaBitacoras();
+    BuscaPasos(oP.Puesto__c,sClinica);
+    bTieneEtapas = true;
+        LlenaRangos();
+        LlenaEstadisticas(oP.Puesto__c);
+  }
+
+  public void RegresaPXDilatacion(){
+    for(Etapa_Paciente__c pxDilatacion : [SELECT Id, Personal__c, Etapa__c, Clinica__r.Name, Tiempo_Dilatacion__c, Personal__r.Name,
+                          Personal__r.Estatus_Personal__c, Estatus__c
+                        FROM Etapa_Paciente__c
+                        WHERE CreatedDate = TODAY
+                          AND Tiempo_Dilatacion__c >= 1
+                          AND Estatus__c = 'Dilatación']){
+      system.debug('[1. RegresaPXDilatacion] pxDilatacion: '+pxDilatacion.Personal__c);
+      if(pxDilatacion.Personal__c == null){
+        pxDilatacion.Estatus__c = 'En Espera';
+        //system.debug('RegresaPXDilatacion [2] : no hay personal');
+      } else {
+        if(pxDilatacion.Personal__r.Estatus_Personal__c == 'Fuera'){
+          pxDilatacion.Estatus__c = 'En Espera';
+          pxDilatacion.Personal__c = null;
+          //system.debug('RegresaPXDilatacion [3] : Personal Fuera');
+        } else {
+          pxDilatacion.Estatus__c = 'Asignado';
+          //system.debug('RegresaPXDilatacion [4] : Asignado a personal');
+        }
+      }
+      update pxDilatacion;
+      //system.debug('RegresaPXDilatacion [5] : update');
+    }
+  }
+
+  public void BuscaBitacoras(){
+    lBitacoras = new list<Bitacora_Personal__c>();
+        String Consulta = 'SELECT Id, Name, Consultorio__c,Consultorio_list__c,Estatus__c,Hora__c, Personal__c, Personal__r.Name, Fecha_Login__c, Fecha_Logout__c, Estado__c';
+    Consulta +=       ' FROM Bitacora_Personal__c';
+    Consulta +=       ' WHERE Fecha__c = TODAY';
+    Consulta +=        ' AND Clinica__c =\''+ sClinica +'\'';
+    //system.debug('sClinica: '+sClinica);
+    if(sPer !='-- Seleccione --'){
+      Consulta +=' AND Personal__r.Name =\''+ sPer +'\'';
+    }
+    if(sCons !='-- Seleccione --'){
+      Consulta +=' AND Consultorio__c =\''+ sCons +'\'';
+    }
+    Consulta +=       ' order by Personal__c,Createddate DESC';
+
+    lBitacoras= Database.query(consulta);
+  }
+
+    public void BuscaPersonal(){
+        lClinicas = new list<string>();
+        lSOClinicas = new List<SelectOption>();
+        lSOClinicas.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+    mSOPersonal     = new map<string,list<SelectOption>>();
+        for(Clinica__c oCl:[SELECT Name, Consultorios__c ,(
+                    SELECT Personal__r.Name
+                      FROM Personal_Cl_nica__r
+                      WHERE Personal__r.Activo__c = true
+                      ORDER BY Personal__r.Name)
+                  FROM Clinica__c
+                            WHERE Activo__c = true
+                            ORDER BY Name
+        ]){
+          lClinicas.add(oCl.Name);
+          lSOClinicas.add(new SelectOption(oCl.Name, oCl.Name));
+            lSOPersonal = new List<SelectOption>();
+            lSOPersonal.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+            for(Personal_Cl_nica__c oPC: oCl.Personal_Cl_nica__r){
+              lSOPersonal.add(new SelectOption(oPC.Personal__r.Name,oPC.Personal__r.Name));
+            }
+            mSOPersonal.put(oCl.Name,lSOPersonal);
+        }
+
+        lSOPersonal = new List<SelectOption>();
+        lSOPersonal.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+        mSOPersonal.put('-- Seleccione --',lSOPersonal);
+    }
+
+  public void RegresarAFlujoAbandono(){
+    integer cont=0;
+    for(Etapa_Paciente__c oE:lEtapasAb){
+      if(oE.Id == IdEtapa){
+        oE.Estatus__c       = 'En Espera';
+        oE.Stamp_Llegada__c = datetime.now();
+        update oE;
+        break;
+      }
+      cont++;
+    }
+    lEtapasAb.remove(cont);
+  }
+
+  public void RegresarAFlujoAtencion(){
+    integer cont=0;
+    for(Etapa_Paciente__c oE:lEtapasAt){
+      if(oE.Id == IdEtapa){
+        oE.Estatus__c       = 'En Espera';
+        oE.Stamp_Llegada__c = datetime.now();
+        update oE;
+        break;
+      }
+      cont++;
+    }
+    lEtapasAt.remove(cont);
+  }
+
+  public void RegresarAFlujoDilatacion(){
+    integer cont=0;
+    for(Etapa_Paciente__c oE:lEtapasDi){
+      if(oE.Id == IdEtapa){
+        if(oE.Personal__c != null){
+          oE.Estatus__c = 'Asignado';
+        } else {
+          oE.Estatus__c = 'En Espera';
+        }
+        //oE.Estatus__c       = 'En Espera';
+        oE.Stamp_Llegada__c             = datetime.now();
+        oE.Responsable_de_Dilatacion__c = oP.Id;
+        oE.Stamp_Fin_Dilatacion__c      = datetime.now();
+        update oE;
+        break;
+      }
+      cont++;
+    }
+    lEtapasDi.remove(cont);
+  }
+
+  public void regresarAtendidos(){
+    integer cont=0;
+    for(Etapa_Paciente__c oE:lEtapasAtendidos){
+      if(oE.Id == IdEtapa){
+        // Modifica la etapa seleccionada
+          if(statusPersonal == 'Fuera'){
+            oE.Personal__c = null;
+            oE.Estatus__c  = 'En Espera';
+              }else{
+                oE.Estatus__c = 'Asignado';
+              }
+              oE.Primero_en_Fila__c = true;
+          update oE;
+        // Elimina las demas etapas la etapa seleccionada
+        //system.debug('idPx '+idPx+' - statusPersonal: '+statusPersonal+' - oE.Name: '+oE.Name);
+        try{
+          List<Etapa_Paciente__c> listEtapasEliminar = [SELECT id, Name, Paciente__c, Etapa__c
+                              FROM Etapa_Paciente__c
+                              WHERE Paciente__c = :idPx
+                              AND Name > :oE.Name
+                              ORDER BY Name DESC];
+          //system.debug('listEtapasEliminar: '+listEtapasEliminar);
+          delete listEtapasEliminar;
+        }catch(exception e){
+          //system.debug('[239] No se encontraron registros');
+        }
+        break;
+      }
+      cont++;
+    }
+    lEtapasAtendidos.remove(cont);
+    Refresh();
+  }
+
+  public void ExpedienteEntregado(){
+    for(Etapa_Paciente__c oE:lEtapasAt){
+      if(oE.Id == IdEtapa){
+        oE.Expediente_Entregado__c       = true;
+        update oE;
+      }
+    }
+  }
+
+  public void guardaEventoEtapa(Etapa_Paciente__c objEtapaPaciente, String accionTomada, Etapa_Paciente__c etapaRegreso){
+    //System.debug('[1 : guardaEventoEtapa] objEtapaPaciente: '+objEtapaPaciente.id);
+    objEtapaPaciente.Accion_Tomada__c        = accionTomada;
+    objEtapaPaciente.Personal_que_regresa__c = objEtapaPaciente.Personal__c;
+    objEtapaPaciente.Regreso_a_Etapa__c      = etapaRegreso.id;
+    objEtapaPaciente.Estatus__c              = 'Eliminado';
+        update objEtapaPaciente;
+  }
+
+  public void PrimeroEnFila(){
+    for(Etapa_Paciente__c oE:lEtapasEEsp){
+      if(oE.Id == IdEtapa){
+        if(!oE.Primero_en_Fila__c)
+          oE.Primero_en_Fila__c = true;
+        else
+          oE.Primero_en_Fila__c = false;
+        update oE;
+      }
+    }
+  }
+
+    public void LlenaRangos(){
+        mRangos = new map<string,Configuracion_Flujo__c>();
+        for(Configuracion_Flujo__c oC:[SELECT Id, Etapa__c, Max_TAtencion__c,Min_TAtencion__c, Max_TEspera__c , Min_TEspera__c
+                                       FROM Configuracion_Flujo__c]){
+            mRangos.put(oC.Etapa__c,oC);
+        }
+    }
+
+  public PageReference Login(){
+    PageReference PagewId = new PageReference('/apex/AdminListasPag');
+    PagewId.setRedirect(true);
+    msjerror = 'Compruebe su nombre de usuario y contraseña';
+    for(Personal__c p:[SELECT id FROM Personal__c WHERE Name=:username and Password__c =:password]){
+      msjerror ='';
+            PagewId.getParameters().put('Id',p.Id);
+            PagewId.getParameters().put('Clinica',sClinica);
+      return PagewId;
+    }
+    return null;
+  }
+
+  public PageReference Logout(){
+    PageReference PagewId = new PageReference('/apex/AdminListasPag');
+    PagewId.setRedirect(true);
+    return PagewId;
+  }
+
+  public void Cancelar(){
+    username = '';
+    password = '';
+    msjerror = '';
+    sClinica = '';
+  }
+
+  public void BuscaPasos(String puesto, String sClinica){
+    mEstadisticas        = new map<string,wrpEstadisticas>();
+    //bTieneEtapas       = false;
+    lEtapasAtendidos     = new list<Etapa_Paciente__c>();
+    lEtapasAtendidosTemp = new list<Etapa_Paciente__c>();
+    lEtapasAb            = new list<Etapa_Paciente__c>();
+    lEtapasAt            = new list<Etapa_Paciente__c>();
+    lEtapasEEsptemp      = new list<Etapa_Paciente__c>();
+    lEtapasEEsp          = new list<Etapa_Paciente__c>();
+    lEtapasDi            = new list<Etapa_Paciente__c>();
+    lSOEtapas            = new List<SelectOption>();
+    rowsEtapasAtendidos  = new List<SelectOption>();
+        lSOEtapas.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+        rowsEtapasAtendidos.add(new SelectOption('-- Seleccione --', '-- Seleccione --'));
+        set<string> sEtapas = new set<string>();
+        set<string> sEtapasAtendidos = new set<string>();
+    //system.debug('BuscarPasos sClinica: '+sClinica);
+        for(Etapa_Paciente__c oE:[SELECT Id,Name,Estatus__c,Personal__c,Personal__r.Name,Personal__r.Estatus_Personal__c,Consultorio__c,Etapa__c,Paciente__c,Paciente__r.Name,Stamp_Inicio_Atencion__c,Visita__r.Fecha_y_hora_de_la_Visita__c
+                                        ,Paciente__r.AccountNumber,Stamp_Llegada__c,Tiempo_Atencion__c,Tiempo_Espera__c, Urgente__c,Flujo__c, Hora_LLegada__c,Hora_Atencion__c,Expediente_Entregado__c,Clinica__r.Name
+                                        ,Stamp_Inicio_Dilatacion__c,Stamp_Fin_Dilatacion__c,Responsable_de_Dilatacion__c,Tiempo_Dilatacion__c,Primero_en_Fila__c, CreatedDate
+                  FROM Etapa_Paciente__c
+                  WHERE Estatus__c != 'Inicio'
+                                        AND Clinica__r.Name = :sClinica
+                                        AND Stamp_Llegada__c = TODAY
+                  ORDER BY Etapa__c,Urgente__c DESC,
+                  Visita__r.Fecha_y_hora_de_la_Visita__c]){
+
+            bTieneEtapas = true;
+            if(oE.Estatus__c =='Atendido' || oE.Estatus__c =='Fin')
+        lEtapasAtendidos.add(oE);
+        sEtapasAtendidos.add(oE.Etapa__c);
+            if(oE.Estatus__c =='En Atención' || oE.Estatus__c =='Asignado')
+        lEtapasAt.add(oE);
+            if(oE.Estatus__c =='Abandono')
+        lEtapasAb.add(oE);
+            if(oE.Estatus__c =='Dilatación')
+        lEtapasDi.add(oE);
+      if(oE.Estatus__c =='En Espera'){
+        lEtapasEEsp.add(oE);
+        sEtapas.add(oE.Etapa__c);
+      }
+    }
+    lEtapasEEsptemp.addall(lEtapasEEsp);
+    for(string setEt:sEtapas){
+      lSOEtapas.add(new SelectOption(setEt,setEt));
+    }
+
+    lEtapasAtendidosTemp.addall(lEtapasAtendidos);
+    for(string setEt:sEtapasAtendidos){
+      rowsEtapasAtendidos.add(new SelectOption(setEt,setEt));
+    }
+  }
+
+    public void Refrescar(){
+      Inicializa();
+      RegresaPXDilatacion();
+    }
+
+    public void LlenaEstadisticas(string puesto){
+        mEstadisticas.put('Personal',new wrpEstadisticas(0,0,0,0,true));
+        mEstadisticas.put('- FINALIZADOS',new wrpEstadisticas(0,0,0,0,true));
+        integer iAbandono   = 0;
+        integer iPXClinica  = 0;
+        integer iTPX        = 0;
+        iPxAtendidosMayores = 0;
+        iPxTEExedido        = 0;
+        sColorPxTEExedido = '';
+        for (AggregateResult results :[SELECT Personal__r.Name,Etapa__c,Estatus__c,count(id) PX,SUM(Tiempo_Espera__c) TE,SUM(Tiempo_Atencion__c) TA
+                                        FROM Etapa_Paciente__c
+                                        WHERE Clinica__r.Name =:sClinica
+                                        AND Estatus__c != 'Inicio'
+                                        AND Stamp_Llegada__c = TODAY
+                                        GROUP BY Etapa__c,Personal__r.Name,Estatus__c
+                                      ]){
+            if(results.get('Estatus__c') =='Abandono'){
+                iAbandono += (integer)results.get('PX');
+                iTPX += (integer)results.get('PX');
+            }else{
+                if(results.get('Estatus__c') =='Fin'){
+                    mEstadisticas.put('- FINALIZADOS',new wrpEstadisticas((integer)results.get('PX'),0,integer.valueOf((decimal)results.get('TE')/(integer)results.get('PX')),integer.valueOf((decimal)results.get('TA')/(integer)results.get('PX')),true));
+                    iTPX += (integer)results.get('PX');
+                }else{
+                    if(results.get('Estatus__c') =='Atendido'){
+                        if(mEstadisticas.containsKey((string)results.get('Etapa__c'))){
+                            wrpEstadisticas oWE = mEstadisticas.get((string)results.get('Etapa__c'));
+                            oWE.PerAtendidas   +=(integer)results.get('PX');
+                            oWE.TiempoEspera   = integer.valueOf((decimal)results.get('TE')/(integer)results.get('PX'));
+                            oWE.TiempoAtencion = integer.valueOf((decimal)results.get('TA')/(integer)results.get('PX'));
+                            if(mRangos.ContainsKey((string)results.get('Etapa__c'))){
+                                oWE.MaxTA = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Max_TAtencion__c);
+                                oWE.MinTA = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Min_TAtencion__c);
+                                oWE.MaxTE = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Max_TEspera__c);
+                                oWE.MinTE = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Min_TEspera__c);
+                            }
+                            mEstadisticas.put((string)results.get('Etapa__c'),oWE);
+                        }else{
+                            wrpEstadisticas oWE = new wrpEstadisticas(0,(integer)results.get('PX'),integer.valueOf((decimal)results.get('TE')/(integer)results.get('PX')),integer.valueOf((decimal)results.get('TA')/(integer)results.get('PX')),true);
+                            if(mRangos.ContainsKey((string)results.get('Etapa__c'))){
+                                oWE.MaxTA = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Max_TAtencion__c);
+                                oWE.MinTA = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Min_TAtencion__c);
+                                oWE.MaxTE = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Max_TEspera__c);
+                                oWE.MinTE = integer.valueOf(mRangos.get((string)results.get('Etapa__c')).Min_TEspera__c);
+                            }
+                            mEstadisticas.put((string)results.get('Etapa__c'),oWE);
+                        }
+                        if(results.get('Name') == nPersonal){
+                            wrpEstadisticas oWEP = mEstadisticas.get('Personal');
+                            oWEP.PerAtendidas    +=(integer)results.get('PX');
+                            oWEP.TiempoEspera    += integer.valueOf((decimal)results.get('TE'));
+                            oWEP.TiempoAtencion  += integer.valueOf((decimal)results.get('TA'));
+                            oWEP.MaxTA = integer.valueOf(oP.Max_TAtencion__c);
+                            oWEP.MinTA = integer.valueOf(oP.Min_TAtencion__c);
+                            oWEP.MaxTE = integer.valueOf(oP.Max_TEspera__c);
+                            oWEP.MinTE = integer.valueOf(oP.Min_TEspera__c);
+                            mEstadisticas.put('Personal',oWEP);
+                        }
+                    }else{
+                        if(mEstadisticas.containsKey((string)results.get('Etapa__c'))){
+                            wrpEstadisticas oWE = mEstadisticas.get((string)results.get('Etapa__c'));
+                            oWE.Pacientes +=(integer)results.get('PX');
+                            mEstadisticas.put((string)results.get('Etapa__c'),oWE);
+                        }else{
+                            mEstadisticas.put((string)results.get('Etapa__c'),new wrpEstadisticas((integer)results.get('PX'),0,0,0,true));
+                        }
+                        iPXClinica += (integer)results.get('PX');
+                        iTPX += (integer)results.get('PX');
+                    }
+                }
+            }
+        }
+      /*for(Etapa_Paciente__c oE:[SELECT Id,Tiempo_Atencion__c,Tiempo_Espera__c,Etapa__c,Estatus__c,Personal__r.Name,Clinica__r.Name
+                                    ,Configuracion_Flujo__r.Min_TAtencion__c,Configuracion_Flujo__r.Max_TAtencion__c,Configuracion_Flujo__r.Min_TEspera__c,Configuracion_Flujo__r.Max_TEspera__c
+                                    ,Clinica__r.Min_TAtencion__c,Clinica__r.Max_TAtencion__c,Clinica__r.Min_TEspera__c,Clinica__r.Max_TEspera__c
+                                    ,Personal__r.Min_TAtencion__c,Personal__r.Max_TAtencion__c,Personal__r.Min_TEspera__c,Personal__r.Max_TEspera__c
+                                FROM Etapa_Paciente__c
+                                WHERE Clinica__r.Name =:sClinica]){//WHERE Stamp_Llegada__c=TODAY
+            if(oE.Estatus__c == 'Atendido'){
+                if(mEstadisticas.containsKey(oE.Etapa__c)){
+                    wrpEstadisticas oWE = mEstadisticas.get(oE.Etapa__c);
+                    oWE.PerAtendidas +=1;
+                    oWE.TiempoEspera += integer.valueOf(oE.Tiempo_Espera__c);
+                    oWE.TiempoAtencion += integer.valueOf(oE.Tiempo_Atencion__c);
+                    oWE.MaxTA = integer.valueOf(oE.Configuracion_Flujo__r.Max_TAtencion__c);
+                    oWE.MinTA = integer.valueOf(oE.Configuracion_Flujo__r.Min_TAtencion__c);
+                    oWE.MaxTE = integer.valueOf(oE.Configuracion_Flujo__r.Max_TEspera__c);
+                    oWE.MinTE = integer.valueOf(oE.Configuracion_Flujo__r.Min_TEspera__c);
+                    mEstadisticas.put(oE.Etapa__c,oWE);
+
+                }else{
+                    mEstadisticas.put(oE.Etapa__c,new wrpEstadisticas(0,1,integer.valueOf(oE.Tiempo_Espera__c),integer.valueOf(oE.Tiempo_Atencion__c),'color:black;'));
+                }
+
+                if(oE.Personal__r.Name == nPersonal){
+                    wrpEstadisticas oWEP = mEstadisticas.get('Personal');
+                    oWEP.PerAtendidas +=1;
+                    oWEP.TiempoEspera += integer.valueOf(oE.Tiempo_Espera__c);
+                    oWEP.TiempoAtencion += integer.valueOf(oE.Tiempo_Atencion__c);
+                    oWEP.MaxTA = integer.valueOf(oE.Personal__r.Max_TAtencion__c);
+                    oWEP.MinTA = integer.valueOf(oE.Personal__r.Min_TAtencion__c);
+                    oWEP.MaxTE = integer.valueOf(oE.Personal__r.Max_TEspera__c);
+                    oWEP.MinTE = integer.valueOf(oE.Personal__r.Min_TEspera__c);
+                    mEstadisticas.put('Personal',oWEP);
+                }
+            }
+            if(oE.Estatus__c == 'Atendido'){
+
+            }
+        }*/
+
+        lEtapas = new list<string>();
+        lEtapas.add('POR LLEGAR');
+        for(string sE:mEstadisticas.keySet()){
+            if(sE != 'Personal' && sE != '- FINALIZADOS')
+                lEtapas.add(sE);
+        }
+
+        px_parametros__c confParametrosPx = px_parametros__c.getOrgDefaults();
+        IDreporteFlujo = confParametrosPx.ID_Reporte_Etapas__c;
+
+        PxPorLlegar = [SELECT count()
+                       FROM Event e
+                       WHERE Clinica__c = :sClinica
+                       AND StartDateTime = TODAY
+                       AND (Estado_Cita__c = 'Confirmada'
+                        OR Estado_Cita__c = 'Pendiente'
+                        OR Estado_Cita__c = 'Nueva'
+                        OR Estado_Cita__c = 'Reagendada')];
+
+
+        integer iAtendidos=[SELECT count() FROM Event e
+                            WHERE Clinica__c = :sClinica
+                            AND (Estado_Cita__c != 'Cancelada' OR Estado_Cita__c != 'Realizada')
+                            AND StartDateTime = TODAY
+                            ];
+
+        iPxAtendidosMayores = [SELECT count(Id) FROM Etapa_Paciente__c WHERE Paciente__r.Edad__c >=:confParametrosPx.Rango_de_tercera_edad__c GROUP BY Paciente__c].size();
+        integer iPxTemp = 0;
+        integer iMaxTe = 0;
+        integer iMinTe = 0;
+        for(Etapa_Paciente__c oEP:[SELECT Tiempo_Total_de_Espera__c,Clinica__r.Max_TEspera__c,Clinica__r.Min_TEspera__c
+                                   FROM Etapa_Paciente__c
+                                   WHERE Estatus__c='Fin'
+                                   AND Clinica__r.Name =:sClinica
+                                   AND Stamp_Llegada__c = TODAY
+                                   ]){
+            iPxTemp +=1;
+            if(oEP.Tiempo_Total_de_Espera__c >= confParametrosPx.Tiempo_de_Espera__c)
+                iPxTEExedido +=1;
+            iMaxTe = integer.valueOf(oEP.Clinica__r.Max_TEspera__c);
+            iMinTe = integer.valueOf(oEP.Clinica__r.Min_TEspera__c);
+        }
+        if(iPxTemp >0)
+            iPxTEExedido = integer.valueOf(iPxTEExedido*100/iPxTemp);
+        if(iPxTEExedido < iMinTe || iPxTEExedido == 0)
+            sColorPxTEExedido = 'background:#39c0cb; color:#FFFFFF;';
+        else if(iPxTEExedido > iMaxTe)
+            sColorPxTEExedido = 'background:#9A0F48; color:#FFFFFF;';
+        else
+            sColorPxTEExedido = 'background:#FDCD30; color:#FFFFFF;';
+
+        wrpEstadisticas oWEP = mEstadisticas.get('Personal');
+        if(oWEP.PerAtendidas > 0){
+            oWEP.TiempoEspera = oWEP.TiempoEspera/oWEP.PerAtendidas;
+            oWEP.TiempoAtencion = oWEP.TiempoAtencion/oWEP.PerAtendidas;
+            mEstadisticas.put('Personal',oWEP);
+        }
+        for(wrpEstadisticas oW:mEstadisticas.values()){
+            if(oW.TiempoAtencion < oW.MinTA)
+                oW.estiloTA = 'background:#39c0cb; color:#FFFFFF;';
+            else if(oW.TiempoAtencion > oW.MaxTA)
+                oW.estiloTA = 'background:#9A0F48; color:#FFFFFF;';
+            else
+                oW.estiloTA = 'background:#FDCD30; color:#FFFFFF;';
+
+            if(oW.TiempoAtencion == 0)
+                oW.estiloTA = '';
+
+            if(oW.TiempoEspera < oW.MinTE)
+                oW.estiloTE = 'background:#39c0cb; color:#FFFFFF;';
+            else if(oW.TiempoEspera > oW.MaxTE)
+                oW.estiloTE = 'background:#9A0F48; color:#FFFFFF;';
+            else
+                oW.estiloTE = 'background:#FDCD30; color:#FFFFFF;';
+
+            if(oW.TiempoEspera == 0)
+                oW.estiloTE = '';
+        }
+
+        mEstadisticas.put('POR LLEGAR',new wrpEstadisticas(iAtendidos,0,0,0,false));
+        mEstadisticas.put('- PX EN CLÍNICA',new wrpEstadisticas(iPXClinica,0,0,0,false));
+        mEstadisticas.put('- EN ABANDONO',new wrpEstadisticas(iAbandono,0,0,0,false));
+        mEstadisticas.put('TOTAL DE PX',new wrpEstadisticas(iTPX+iAtendidos,0,0,0,false));
+        lEtapas.add('- PX EN CLÍNICA');
+        lEtapas.add('- FINALIZADOS');
+        lEtapas.add('- EN ABANDONO');
+        lEtapas.add('TOTAL DE PX');
+    }
+
+    //Esta clase para mi lista Estadisticas
+    public class wrpEstadisticas {
+
+        public integer Pacientes{ get; set; }
+        public integer PerAtendidas{ get; set; }
+        public integer TiempoEspera { get; set;}
+        public integer TiempoAtencion { get; set;}
+        public integer MaxTE { get; set;}
+        public integer MinTE { get; set;}
+        public integer MaxTA { get; set;}
+        public integer MinTA { get; set;}
+        public string estiloTE { get; set;}
+        public string estiloTA { get; set;}
+        public boolean bMuestraCol { get; set;}
+
+        public wrpEstadisticas(integer PX,integer PA,integer TE,integer TA,boolean bMuestra){
+            Pacientes      = PX;
+            PerAtendidas   = PA;
+            TiempoEspera   = TE;
+            TiempoAtencion = TA;
+            bMuestraCol    = bMuestra;
+        }
+    }
+}

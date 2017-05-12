@@ -1,0 +1,619 @@
+<apex:component controller="ControllerProgramacionTres"  allowDML="true" >
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <apex:includeScript value="/support/console/22.0/integration.js"/>
+        <article class="slds-card fondo-verde-obscuro">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                    <div class="slds-media__body slds-truncate">
+                        <h2>
+                            <span class="slds-text-heading--small font-amarillo">Programación</span>
+                        </h2>
+                    </div>
+                </header>
+                <div class="slds-no-flex">
+                    <!--<div class="slds-float--left fondo-amarillo">
+<a href="javascript:void(0);"  title="Agregar Tratamiento" id="botonAgregaDiagnostico">
+<svg class="slds-button__icon slds-button__icon--large " aria-hidden="false">
+<use  xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#new')}"></use>
+</svg>
+</a>
+</div>-->
+                    <input type="button" value="Agregar Tratamiento" class="slds-button slds-button--neutral" id="agregaTratamiento"/>
+                         
+                    <apex:commandButton value="Guardar" styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!GuardarConsejeria}"/>
+                    <apex:commandButton value="Abandono" styleclass="slds-button slds-button--neutral" action="{!Abandono}"/>
+                </div>
+            </div>
+
+            <div class="slds-card__body slds-theme--default slds-size--1-of-1 ">
+                <div id="FormEdicion" class="slds-scrollable--y slds-form--compound slds-grid slds-grid--vertical slds-nowrap slds-is-editing slds-text-body--regular" style="height: 450px">
+                    <fieldset id="Diagnostico" class="slds-form--compound">
+                        <div class="slds-form-element__group ">
+                            <div class="slds-form-element__row">
+                                <div class="slds-form-element slds-size--1-of-1">
+                                    <div id="DIag" class="slds-show">
+                                        <div class="slds-section slds-box--x-small slds-is-open">
+                                            <h3 class="slds-section-title--divider">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-text-align--center">Urgente</div>
+                                                    <div class="slds-col slds-text-align--center">Tratamiento</div>
+                                                    <div class="slds-col slds-text-align--center">Tipo de Cx/Tx</div>
+                                                    <div class="slds-col slds-text-align--center">Estado</div>
+                                                    <div class="slds-col slds-text-align--center">Estimación</div>
+                                                    <div class="slds-col slds-text-align--center">Detalle</div>
+                                                    <div class="slds-col slds-text-align--center">Antigüedad</div>
+                                                    <div class="slds-col slds-text-align--center">Fecha de Cr.</div>
+
+
+                                                </div>
+                                            </h3>
+                                            <div class="slds-section__content">
+                                                <div class="slds-form-element__row">
+                                                    <div class="slds-form-element slds-size--1-of-1">
+                                                        <apex:outputPanel id="PanelUno">
+                                                        <ul class="slds-has-dividers--top-space">
+
+                                                            <apex:repeat value="{!programacionVisual}" var="pv" id="TratamientoTablaRepeat" >
+                                                                <li class="slds-item slds-text-color--default" >
+                                                                    <div class="slds-form-element__group slds-form--compound slds-text-align--center">
+                                                                        <div class="slds-form-element__row slds-has-divider--bottom">
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:outputField value="{!pv.carePlan.Urgente__c}" />
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:outputText value="{!pv.tratamiento} - {!pv.carePlan.Ojo__c} "/>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:outputtext value="{!pv.nombreTratamiento}" />
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:outputField value="{!pv.carePlan.Estado__c}" />
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:commandButton reRender="DiagnosticoRefractivo"  styleClass="slds-m-top--xx-small slds-button slds-button--neutral " status="statuslistas"
+                                                                                                        value="{!pv.oportunidad.Name}" style="font-size: 8pt;" onclick="sforce.one.navigateToSObject('{!pv.identificadorEstimacion}');"/>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:commandButton styleClass="slds-m-top--xx-small slds-button slds-button--brand fondo-verde-claro" action="{!FuncionDummy}" style=" font-size: 10px;" immediate="true" value="Detalles"  reRender="FechaCir" onclick="AbreDetalles('{!pv.tratamiento}','{!pv.identificador}','{!pv.carePlan.Ojo__c}');" >
+                                                                                        <apex:param name="eliminar" assignTo="{!selTratamientoDeleteIdentificador}" value="{!pv.identificador}"/>
+                                                                                    </apex:commandButton>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+
+                                                                                    <apex:outputText value="{!pv.antiguedad} días " />
+
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="slds-form-element slds-m-bottom--small">
+                                                                                <span class="slds-text-title slds-text-color--default">
+                                                                                    <apex:outputPanel id="FechaCir">
+                                                                                        <!-- <apex:outputText value="{!pv.oportunidad.createdDate}" />-->
+                                                                                        <apex:outputText value="{0,date,dd/MM/yy}">
+                                                                                            <apex:param value="{!pv.oportunidad.createdDate}" />
+                                                                                        </apex:outputText>
+                                                                                    </apex:outputPanel>
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            </apex:repeat>
+
+
+                                                        </ul>
+                                                            </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="facetCargandoStatusListo">
+                        <div class="slds-hide" id="ModalMasInformacion" >
+                            <div role="dialog" tabindex="-1" aria-labelledby="header43" class="slds-modal slds-fade-in-open ">
+                                <div class="slds-modal__container">
+                                    <div class="slds-modal__header fondo-verde-obscuro">
+                                        <!--<button class="slds-button slds-modal__close slds-button--icon-inverse" title="Close" id="BotonCerrar">-->
+                                        <a href="javascript:void(0);" class="slds-button slds-modal__close slds-button--icon-inverse" title="Cerrar" id="BotonCerrar">
+                                            <svg class="slds-button__icon slds-button__icon--large" aria-hidden="true">
+
+                                                <use xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                                            </svg>
+                                        </a>
+                                        <span class="slds-assistive-text">Close</span>
+
+                                        <h2 id="header43" class="font-amarillo slds-text-heading--medium">
+                                            <font id="TituloCabecera" >
+
+                                            </font>
+                                        </h2>
+                                    </div>
+                                    <div class="slds-modal__content slds-p-around--medium primero" >
+                                        <apex:outputPanel id="PanelDos">
+                                        <ul >
+                                            <apex:repeat value="{!programacionVisual}" var="pv" id="TratamientoTablaRepeatModalUno" >
+                                                <li class="slds-item slds-text-color--default" >
+                                                    <div class="slds-form-element__group slds-form--compound slds-text-align--center">
+
+                                                        <div class="slds-form-element__row ">
+
+                                                            <div class="slds-form-element slds-m-bottom--small slds-hide {!pv.identificador}">
+                                                                <h3 class="slds-section-title--divider">Información General</h3>
+                                                                <span class="slds-text-title slds-text-color--default">
+
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Urgente</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField value="{!pv.carePlan.Urgente__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Pronostico</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField styleClass="checkboxSelect" value="{!pv.carePlan.Pronostico__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Dr. Creó</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField value="{!pv.carePlan.Creado_x__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Dr. Autorizó</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField styleClass="checkboxSelect" value="{!pv.carePlan.Autorizado_por__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Motivo de Consulta Médico</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField value="{!consulta.Motivo_de_consulta_Medico__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Plan de Tratamiento</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:outputField value="{!consulta.Plan_de_tratamiento__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row  ">
+
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row  ">
+                                                                        <h3 class="slds-section-title--divider slds-size--1-of-1 slds-align--absolute-center">Datos de Programación</h3>
+                                                                    </div>
+
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+                                                                                Asignar Tratamiento
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select" value="{!pv.problema.Care_Plan_Template_Problem_SU__c}"  multiselect="false" size="1"  tabindex="0" >
+
+                                                                                        <apex:selectOptions value="{!pv.opcionesTratamiento}"/>
+                                                                                    </apex:selectList>
+                                                                                    <!--<apex:inputField value="{!pv.problema.Care_Plan_Template_Problem_SU__c}" />-->
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+                                                                                Sub-Especialidad
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Sub_Especialidad__c}" />
+
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Complejidad de Cx.</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Tipo_de_Cirugia__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Categoria de Cx.</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Categoria_de_Cx__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Dr. que Opera</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField style="border: 1px solid #d8dde6; border-radius: .25rem;" value="{!pv.problema.doctor_Opera__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Sala de Quirofano</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Sala_Quirofano__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">
+                                                                                1. Tipo de Lente
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Tipo_de_Lente__c}" />
+
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">
+                                                                                1. Poder de Lente
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Poder_de_Lente__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                     <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">
+                                                                                2. Tipo de Lente
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Tipo_de_Lente_2__c}" />
+
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">
+                                                                                2. Poder de Lente
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Poder_de_Lente_dos__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Tipo de Anestesia</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Tipo_de_Anestesia__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Material Adicional</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                     <apex:inputField styleClass="slds-select" value="{!pv.problema.Material_adicional__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label>
+                                                                                Fecha de Programación
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField style="border: 1px solid #d8dde6; border-radius: .25rem;" value="{!pv.problema.Fecha_Hora_Cirugia__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Cancelar Cx.</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputCheckbox styleClass="checkboxSelect" value="{!pv.cancelada}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element__row slds-hide cancelado">
+
+                                                                            <div class="slds-form-element slds-size--1-of-1 slds-hide cancelado">
+                                                                                <div class="slds-form-element">
+                                                                                    <section class="slds-clearfix">
+                                                                                        <div class="slds-float--left slds-m-horizontal--xx-large">
+                                                                                            <p>
+                                                                                                Motivo de la Cancelación
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </section>
+
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element__row slds-hide cancelado">
+
+                                                                            <div class="slds-form-element slds-size--1-of-1 slds-hide cancelado">
+                                                                                <div class="slds-form-element">
+                                                                                    <strong>
+                                                                                        <apex:inputTextarea styleClass="slds-select" style="width:400px; height:50px;" value="{!pv.comentarioCancelacion}" />
+                                                                                    </strong>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+                                                                        <div class="slds-form-element slds-size--1-of-1 ">
+                                                                            <label class="slds-form-element__label">Observaciones Programación.</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-select" value="{!pv.problema.Observaciones_Programacion__c }" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-has-divider--top">
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+
+                                                                                    <!--<apex:commandLink action="{!asignaURL}" target="_blank" value="Imprimir Hoja Frontal" id="theButtonLink"/>-->
+                                                                                    <apex:commandLink onclick="abreNuevaVentana();" value="Imprimir Hoja Frontal" id="theButtonLink" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!--<apex:commandButton styleClass="btn" value="Imprimir Hoja Frontal" style="font-size: 8pt" action="{!asignaURL}" /> -->
+
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </apex:repeat>
+                                        </ul>
+                                        </apex:outputPanel>
+
+                                    </div>
+                                    <div class="slds-modal__footer fondo-verde-obscuro primero">
+                                        <!-- <apex:commandButton value="Actualizar" status="statuslistas" reRender="{!$Component.TratamientoTablaRepeat.myRow},{!$Component.TratamientoTablaRepeat.myRowDos}"
+styleclass="slds-button slds-button--brand fondo-amarillo"
+onclick="CierraModales();" />     -->
+                                    </div>
+                                    <div class="slds-modal__content slds-p-around--medium segundo" >
+                                        <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                            <div class="slds-form-element__row">
+                                                <div class="slds-form-element slds-size--1-of-4">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Tratamiento</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:200px;"  value="{!seleccionadoModal}" tabindex="0" id="modalTratamientoSeleccionado">
+                                                                <!--  <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>-->
+                                                                <apex:selectOptions value="{!tratamientoElegir}"/>
+                                                                <!--<apex:actionSupport event="onchange" reRender="TratamientoTabla" />-->
+                                                            </apex:selectList>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-4">
+
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-4">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Ojo</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:100px;"  value="{!ojoTratamientoElegido}" tabindex="0" id="modalTratamientoOjoSeleccionado">
+                                                                <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                                <apex:selectOptions value="{!ojoAElegir}"/>
+                                                                <!--<apex:actionSupport event="onchange" reRender="TratamientoTabla,DiagnosticoTabla" />-->
+                                                            </apex:selectList>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-4">
+
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-4">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Estimación</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:100px;"  value="{!estimacionElegida}" tabindex="0" id="modalTratamientoEstimacionSeleccionada">
+                                                                <!--<apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>-->
+                                                                <apex:selectOptions value="{!estimacionesAsociadas}"/>
+                                                                <!--<apex:actionSupport event="onchange" reRender="TratamientoTabla,DiagnosticoTabla" />-->
+                                                            </apex:selectList>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-4">
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+                                    <div class="slds-modal__footer fondo-verde-obscuro segundo">
+                                        <apex:commandButton value="Agregar Tratamiento" status="statuslistas" action="{!agregaTratamiento}"
+                                                            styleclass="slds-button slds-button--neutral fondo-amarillo" reRender="FechaCir,PanelUno,PanelDos,modalTratamientoSeleccionado,modalTratamientoEstimacionSeleccionada,modalTratamientoOjoSeleccionado"
+                                                            onclick="CierraModales();"  />
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="slds-backdrop slds-backdrop--open"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+            $("#agregaTratamiento").click(function(){
+                $("#TituloCabecera").text("Agregar Tratamiento");
+                $("#ModalMasInformacion").removeClass("slds-hide");
+                $("#ModalMasInformacion").addClass("slds-show");
+                $(".segundo").removeClass("slds-hide");
+                $(".segundo").addClass("slds-show");
+                $(".primero").removeClass("slds-show");
+                $(".primero").addClass("slds-hide");
+
+            })
+            function CierraModales(){
+                $("#ModalMasInformacion").removeClass("slds-show");
+                $("#ModalMasInformacion").addClass("slds-hide");
+                for (i = 0; i < 50; i++) {
+
+                    $("."+i).removeClass("slds-show");
+                    $("."+i).addClass("slds-hide");
+                }
+
+            }
+            function AbreConfirmacion(a,b,c){
+                console.log(a);
+                console.log('Ya se abrio el modal');
+                $("#ModalMasInformacion").removeClass("slds-hide");
+                $("#ModalMasInformacion").addClass("slds-show");
+                $(".segundo").removeClass("slds-hide");
+                $(".segundo").addClass("slds-show");
+                $(".primero").removeClass("slds-show");
+                $(".primero").addClass("slds-hide");
+                $("#TituloCabecera").text("Cancelacion de "+a+" - "+c);
+                $("."+b).removeClass("slds-hide");
+                $("."+b).addClass("slds-show");
+
+
+            }
+            function AbreDetalles(a,b,c){
+                console.log(a);
+                console.log('Ya se abrio el modal');
+                $("#ModalMasInformacion").removeClass("slds-hide");
+                $("#ModalMasInformacion").addClass("slds-show");
+                $(".primero").removeClass("slds-hide");
+                $(".primero").addClass("slds-show");
+                $(".segundo").removeClass("slds-show");
+                $(".segundo").addClass("slds-hide");
+                $("#TituloCabecera").text("Detalles de "+a+" - "+c);
+                $("."+b).removeClass("slds-hide");
+                $("."+b).addClass("slds-show");
+
+            }
+
+            function abreModalMasInformacion(a,b,c){
+                console.log(a);
+                console.log(b);
+                $("#ModalMasInformacion").removeClass("slds-hide");
+                $("#ModalMasInformacion").addClass("slds-show");
+                $("#TituloCabecera").text(b+" - "+c);
+                $("."+a).removeClass("slds-hide");
+                $("."+a).addClass("slds-show");
+            }
+            $("#BotonCerrar").click(function(){
+                console.log('cerrar');
+                $("#ModalMasInformacion").removeClass("slds-show");
+                $("#ModalMasInformacion").addClass("slds-hide");
+                for (i = 0; i < 10; i++) {
+
+                    $("."+i).removeClass("slds-show");
+                    $("."+i).addClass("slds-hide");
+                }
+            })
+            function ocultaTodo(){
+                $(".facetCargandoStatusListo").removeClass("slds-show");
+                $(".facetCargandoStatusListo").addClass("slds-hide");
+            }
+            function muestraTodo(){
+                $(".facetCargandoStatusListo").addClass("slds-show");
+                $(".facetCargandoStatusListo").removeClass("slds-hide");
+            }
+            $(document).on('click', '.checkboxSelect', function(){
+                if($(this).prop('checked') == true){
+                    $(".cancelado").addClass("slds-show");
+                    $(".cancelado").removeClass("slds-hide");
+                    //  alert('checked');
+                } else {
+                    $(".cancelado").removeClass("slds-show");
+                    $(".cancelado").addClass("slds-hide");
+                    //alert('unchecked');
+                }
+            });
+            function abreNuevaVentana() {
+                window.open("{!URLHojaFrontal}");
+            }
+            </script>
+        </article>
+    </html>
+</apex:component>

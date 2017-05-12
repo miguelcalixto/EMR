@@ -1,0 +1,838 @@
+<apex:component allowDML="true" controller="TratamientoControllerDos">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <style type="text/css">
+            .tabla-uno{
+            background:#cef4f7 !important;
+            color: #000000 !important;
+            }
+            .tabla-dos{
+            background:#FFFFFF !important;
+            color: #000000 !important;
+            }
+            .tabla-tres{
+            background:#d0ffdf !important;
+            color: #000000 !important;
+            }
+            .tabla-cuatro{
+            background:#d8dbdb !important;
+            color: #000000 !important;
+            }
+            .tabla-cinco{
+            background:#CCCCCC !important;
+            color: #000000 !important;
+            }
+            #truncaTexto {
+            display:inline-block;
+            white-space: nowrap;
+            width: 16em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            
+            }
+        </style>
+        <article class="slds-card fondo-verde-obscuro">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                    <div class="slds-media__body slds-truncate">
+                        <h2 class="slds-text-heading--small font-amarillo">Plan de Salud</h2>
+                    </div>
+                </header>
+                
+                <div class="slds-no-flex">
+                    <apex:outputPanel id="botonParaGuardarBlog">
+                        <apex:commandButton value="Regresar" styleclass="slds-button slds-button--brand fondo-verde-claro" action="{!RegresarBack}" />
+                        
+                        <input type="button" value="Guardar" class="slds-button slds-button--neutral fondo-amarillo" id="botonParaGuardar" onclick="evaluaGuardado('{!tratamientosActivosConfirmacionGuardado}');"/>
+                    </apex:outputPanel>
+                    <!-- <c:prescript_button_create_rx /> -->
+                </div>
+                
+            </div>
+            
+            <apex:pageBlock mode="edit" id="FormEdicion"  >
+                <div class="slds-grid slds-grid--vertical-stretch ">
+                    <!-- Tabla de Diagnósticos -->
+                    <div class="slds-card__body slds-theme--default slds-size--1-of-3 ">
+                        <div id="FormEdicionDos" class="retracta slds-scrollable--y slds-form--compound slds-grid slds-grid--vertical slds-nowrap slds-is-editing slds-text-body--regular" style="height: 450px">
+                            <fieldset id="Diagnostico" class="slds-form--compound">
+                                <div class="slds-form-element__group ">
+                                    <div class="slds-form-element__row">
+                                        <div class="slds-form-element slds-size--1-of-1">
+                                            <div id="DIag" class="slds-show">
+                                                <!-- Sección de Diagnósticos -->
+                                                <div class="slds-section slds-box--x-small slds-is-open">
+                                                    <h3 class="slds-section-title--divider">
+                                                        <div class="slds-grid">  
+                                                             
+                                                            <apex:outputPanel id="checkTodosDiagnosticos">
+                                                                <apex:inputCheckbox id="inputSeleccionaTodos"  styleClass="checkboxSelectTodosDiagnosticos slds-m-left--xx-small"  disabled="false" style="border: 1px solid #d8dde6; border-radius: .25rem;" onclick="agregaElementoDiagnostico('false',this,'false');">
+                                                                </apex:inputCheckbox>
+                                                            </apex:outputPanel>
+                                                             
+                                                             
+                                                            Diagnostico
+                                                            
+                                                            
+                                                            <div class="slds-col--bump-left">
+                                                                <a href="javascript:void(0);"  title="Elimina Diagnostico" id="iconoParaEliminarDiagnostico">
+                                                                    <svg class="slds-button__icon slds-button__icon--large " aria-hidden="false">
+                                                                        <use  xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#delete')}"></use>
+                                                                    </svg>
+                                                                </a>
+                                                                   
+                                                                <a href="javascript:void(0);"  title="Agregar Diagnostico" id="botonAgregaDiagnostico">
+                                                                    <svg class="slds-button__icon slds-button__icon--large " aria-hidden="false">
+                                                                        <use  xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#new')}"></use>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </h3>
+                                                    <div class="slds-section__content">
+                                                        <div class="slds-form-element__row">
+                                                            <apex:pageBlockTable value="{!diagnosticoVisual}" var="diagnostico" styleClass="slds-table slds-table--bordered slds-table--cell-buffer "  id="DiagnosticoTabla" headerClass="slds-hide" >
+                                                                <div class="slds-form-element slds-size--1-of-2">
+                                                                    <apex:column styleClass="{!diagnostico.colorFondo}">
+                                                                        <apex:inputCheckbox id="inputIdDiagnostico" title="{!diagnostico.diagnostico}" value="{!diagnostico.checkEliminarDiagnostico}" styleClass="checkboxSelectDiagnosticos {!diagnostico.colorFondo} {!diagnostico.bloqueaBotonEliminar}"  disabled="false" style="border: 1px solid #d8dde6; border-radius: .25rem;" onclick="agregaElementoDiagnostico('{!diagnostico.diagnostico}','{!diagnostico.checkEliminarDiagnostico}','true');">
+                                                                            <!-- <apex:actionSupport status="statuslistas" action="{!guardaDiagnosticosEliminadosEnLista}" event="onchange" reRender="botonParaGuardarBlog" >
+<apex:param name="eliminar" assignTo="{!selDiagnosticoDelete}" value="{!diagnostico.diagnostico}"/>
+<apex:param name="EliminaOjoDiagnostico" assignTo="{!ojoSelDiagnosticoDelete}" value="{!diagnostico.ojo}"/>
+</apex:actionSupport>-->
+                                                                        </apex:inputCheckbox>
+                                                                    </apex:column>
+                                                                </div>
+                                                                <div class="slds-form-element slds-size--1-of-2">
+                                                                    <apex:column styleClass="{!diagnostico.colorFondo}">
+                                                                        <!-- <div class="slds-grid slds-text-title" style="font-size: 10px;">
+<span class="slds-text-title slds-truncate" title="{!diagnostico.diagnostico}">{!diagnostico.diagnostico}</span> - {!diagnostico.ojo}
+</div>
+<div class="slds-form-element slds-hide">
+<span class="slds-text-title">
+<apex:outputText style="font-size: 10px;" value="{!diagnostico.diagnostico} - {!diagnostico.ojo}" escape="false" />
+</span>
+</div>-->
+                                                                        <div class="slds-form-element">
+                                                                            <span class="slds-text-title">
+                                                                                <apex:outputText style="font-size: 10px;"  escape="false" >
+                                                                                    <div  id="truncaTexto" title="{!diagnostico.diagnostico} ">{!diagnostico.diagnostico} </div>  - {!diagnostico.ojoVista}
+                                                                                </apex:outputText>
+                                                                            </span>
+                                                                        </div>
+                                                                    </apex:column>
+                                                                </div>
+                                                                <!--  <div class="slds-form-element slds-size--1-of-2">
+<apex:column styleClass="slds-text-align--right {!diagnostico.colorFondo}"  >
+<apex:commandButton status="statuslistas" styleClass="slds-button slds-button--brand slds-text-align--right fondo-verde-claro {!diagnostico.bloqueaBotonEliminar}" action="{!FuncionDummyDos}" style=" font-size: 10px;" immediate="true" value="Eliminar" onclick="AbreConfirmacionDiagnostico('{!diagnostico.diagnostico}');"  reRender="TratamientoTabla,DiagnosticoTabla"  >
+<apex:param name="eliminar" assignTo="{!selDiagnosticoDelete}" value="{!diagnostico.diagnostico}"/>
+<apex:param name="EliminaOjoDiagnostico" assignTo="{!ojoSelDiagnosticoDelete}" value="{!diagnostico.ojo}"/>
+</apex:commandButton>
+</apex:column>
+</div>-->
+                                                            </apex:pageBlockTable>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de Tratamientos -->
+                    <div class="slds-card__body slds-theme--default slds-size--2-of-3 ">
+                        <div class="slds-section slds-box--x-small slds-is-open slds-m-bottom--none">
+                            <div class="slds-section-title--divider">
+                                <section class="slds-clearfix">
+                                    <div class="slds-float--left">
+                                        Tratamientos
+                                    </div>
+                                    <div class="slds-float--right">
+                                        <a href="javascript:void(0);"  title="Agregar Tratamiento" id="botonAgregar">
+                                            <svg class="slds-button__icon slds-button__icon--large " aria-hidden="false">
+                                                
+                                                <use  xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#new')}"></use>
+                                                
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                        
+                        <div id="FormEdicionDos" class="retracta slds-scrollable slds-form--compound slds-grid slds-grid--vertical slds-nowrap slds-is-editing slds-text-body--regular" style="height: 450px">
+                            <fieldset id="Tratamiento" class="slds-form--compound">
+                                <div class="slds-form-element__group ">
+                                    <div class="slds-form-element__row">
+                                        <div class="slds-form-element slds-size--1-of-1">
+                                            <div id="Trat" class="slds-show">
+                                                <div class="slds-section slds-box--xx-small slds-is-open slds-m-top--none">
+                                                    <div class="slds-section__content">
+                                                        <div class="slds-form-element__row">
+                                                            <div class="slds-form-element slds-size--1-of-2">
+                                                                <apex:pageBlockTable var="tratamiento" value="{!tratamientosVisual}" style="width:400px" styleClass="slds-table slds-table--bordered slds-table--cell-buffer TratamientoTabla"  id="TratamientoTabla">
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column width="25px" headerValue="Prog." title="Programación" headerClass="" styleClass=" color-fondo-tabla {!tratamiento.colorFondo}"> <!--color-fondo-tabla es para poder ver en el script cual es el campo que debo ver-->
+                                                                            <apex:inputCheckbox id="inputId" value="{!tratamiento.checklist}" styleClass="checkboxSelect {!tratamiento.bloqueaInputCheck}"  style="border: 1px solid #d8dde6; border-radius: .25rem;" disabled="{!tratamiento.oportunidadSeguimiento}">
+                                                                                <apex:actionSupport status="statuslistas" action="{!autoriza}" event="onchange" reRender="TratamientoTabla,DiagnosticoTabla,botonParaGuardarBlog" >
+                                                                                    <apex:param assignTo="{!activaCheckList}" value="{!tratamiento.tratamiento}" name="Hola" id="identificador"/>
+                                                                                    <apex:param assignTo="{!ojoActivaCheckList}" value="{!tratamiento.ojo}" name="HolaOjoSend" id="identificadorOjoSend"/>
+                                                                                </apex:actionSupport>
+                                                                            </apex:inputCheckbox>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5 " >
+                                                                        <apex:column headerValue="Tratamiento" title="{!tratamiento.TitleTratamiento}" headerClass="" value="{!tratamiento.tratamiento} - {!tratamiento.ojo}" style=" font-size: 10px; width:20px; " styleClass="{!tratamiento.colorFondo} slds-text-color--default"/>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerValue="Urg." headerClass="" styleClass="{!tratamiento.colorFondo}" >
+                                                                            <apex:inputCheckbox value="{!tratamiento.Urgente}" disabled="{!tratamiento.oportunidadSeguimiento}" styleClass="slds-align--absolute-center" />
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass="" headerValue="Pronostico" styleClass="{!tratamiento.colorFondo}">
+                                                                            <apex:selectList multiselect="false" disabled="{!tratamiento.oportunidadSeguimiento}" size="1" style=" font-size: 10px; border: 1px solid #d8dde6; border-radius: .25rem;"  value="{!tratamiento.Pronostico}" tabindex="0" id="estado">
+                                                                                <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                                                <apex:selectOptions value="{!pronosticoCarePlan}"></apex:selectOptions>
+                                                                                <!--<apex:actionSupport event="onchange" reRender="TratamientoTabla" />-->
+                                                                            </apex:selectList>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass="" headerValue="Nota para consejero" styleClass="{!tratamiento.colorFondo}">
+                                                                            <div align="center">
+                                                                                <apex:inputTextarea style=" font-size: 10px; border: 1px solid #d8dde6; border-radius: .25rem;" disabled="{!tratamiento.oportunidadSeguimiento}" value="{!tratamiento.nota}" />
+                                                                            </div>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass="" headerValue="Cx Catarata" styleClass="{!tratamiento.colorFondo}">
+                                                                            <apex:selectList multiselect="false" size="1" style=" font-size: 10px; border: 1px solid #d8dde6; border-radius: .25rem;" disabled="{!tratamiento.oportunidadSeguimiento}" value="{!tratamiento.Catarata}" tabindex="0" id="catarata">
+                                                                                <apex:selectOption itemLabel="No Aplica" itemValue="No Aplica"/>
+                                                                                <apex:selectOptions value="{!CxCatarata}"></apex:selectOptions>
+                                                                                <!--<apex:actionSupport event="onchange" reRender="TratamientoTabla" />-->
+                                                                            </apex:selectList>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        {!tratamiento.Estudios}
+                                                                        <apex:column headerClass="" headerValue="Estudios" styleClass="{!tratamiento.colorFondo}">
+                                                                            <apex:selectList multiselect="true" size="15" style=" font-size: 10px; border: 1px solid #d8dde6; border-radius: .25rem;" disabled="{!tratamiento.oportunidadSeguimiento}" value="{!tratamiento.Estudios}" tabindex="0" id="estudios">
+                                                                                <apex:selectOptions value="{!estudiosTemplate}"></apex:selectOptions>
+                                                                                <!--<apex:actionSupport event="onblur" reRender="TratamientoTabla" />-->
+                                                                            </apex:selectList>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass=""  headerValue="Eliminar" styleClass="{!tratamiento.colorFondo}">
+                                                                            <div align="center">
+                                                                                <apex:commandButton status="statuslistas" disabled="{!tratamiento.oportunidadSeguimiento}" styleClass="{!tratamiento.bloqueaBotonEliminar}" action="{!FuncionDummy}" style=" font-size: 10px;" immediate="true" value="Eliminar"  reRender="TratamientoTabla,DiagnosticoTabla" onclick="AbreConfirmacion('{!tratamiento.tratamiento}');" >
+                                                                                    <apex:param name="eliminar" assignTo="{!selTratamientoDelete}" value="{!tratamiento.tratamiento}"/>
+                                                                                    <apex:param name="ojoEliminar" assignTo="{!ojoSelTratamientoDelete}" value="{!tratamiento.ojo}"/>
+                                                                                </apex:commandButton>
+                                                                            </div>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                 <!--   <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass="slds-section-title--divider" headerValue="Diagnosticos" styleClass="{!tratamiento.colorFondo}">
+                                                                            <div class="slds-form-element">
+                                                                                <span class="slds-text-title">
+                                                                                    <apex:outputText value="{!tratamiento.diagnosticos}" style=" font-size: 10px;" escape="false" />
+                                                                                </span>
+                                                                            </div>
+                                                                        </apex:column>
+                                                                    </div>
+                                                                    <div styleClass="slds-size--1-of-5" >
+                                                                        <apex:column headerClass="slds-section-title--divider" headerValue="Estados" styleClass="{!tratamiento.colorFondo}" >
+                                                                            <div class="slds-form-element">
+                                                                                <span class="slds-text-title">
+                                                                                    <apex:outputText value="{!tratamiento.estado}" style=" font-size: 10px;" escape="false" />
+                                                                                </span>
+                                                                            </div>
+                                                                        </apex:column>
+                                                                    </div>   -->
+                                                                </apex:pageBlockTable>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+            </apex:pageBlock>
+            
+            <!-- MODAL TRATAMIENTO -->
+            <div class="facetCargandoStatusListo">
+                <div class="slds-hide" id="ModalAgregaTratamiento" >
+                    <div role="dialog" tabindex="-1" aria-labelledby="header43" class="slds-modal slds-fade-in-open ">
+                        <div class="slds-modal__container">
+                            <!-- Agrega Tratamiento -->
+                            <div class="slds-modal__header fondo-verde-obscuro">
+                                <a href="javascript:void(0);" class="slds-button slds-modal__close slds-button--icon-inverse" title="Cerrar" id="BotonCerrar">
+                                    <svg class="slds-button__icon slds-button__icon--large" aria-hidden="true">
+                                        <use xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                                    </svg>
+                                </a>
+                                <span class="slds-assistive-text">Cerrar</span>
+                                <h2 id="header43" class="font-amarillo slds-section__title primero">Agrega Tratamiento</h2>
+                                <h2 id="header43" class="font-amarillo slds-section__title segundo">Elimina Tratamiento</h2>
+                            </div>
+                            <div class="primero">
+                                <div class="slds-modal__content slds-p-around--medium">
+                                    <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label" for="select-01">Tratamiento</label>
+                                                    <div class="slds-form-element__control">
+                                                        <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:200px;"  value="{!seleccionadoModal}" tabindex="0" id="modalTratamientoSeleccionado">
+                                                            <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                            <apex:selectOptions value="{!tratamientosModal}"/>
+                                                            <apex:actionSupport event="onchange" reRender="TratamientoTabla" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label" for="select-01">Ojo</label>
+                                                    <div class="slds-form-element__control">
+                                                        <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:200px;"  value="{!ojoTratamientoElegido}" tabindex="0" id="modalTratamientoOjoSeleccionado">
+                                                            <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                            <apex:selectOptions value="{!ojoAElegir}"/>
+                                                            <apex:actionSupport event="onchange" reRender="TratamientoTabla,DiagnosticoTabla" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-modal__footer fondo-verde-obscuro">
+                                    <apex:commandButton value="Agregar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla,modalTratamientoSeleccionado,modalTratamientoOjoSeleccionado"
+                                                        styleclass="slds-button slds-button--neutral fondo-amarillo"
+                                                        action="{!AgregaTratamiento}" onclick="CierraModales();" />
+                                </div>
+                            </div>
+                            <!-- Elimina Tratamiento -->
+                            <div class="segundo">
+                                <div class="slds-modal__content slds-p-around--medium">
+                                    <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label" for="select-01">Motivo de Eliminación</label>
+                                                    <div class="slds-form-element__control">
+                                                        <apex:outputPanel id="comentarioTratamiento">
+                                                            <apex:inputTextarea styleClass="slds-size--1-of-1 slds-input" value="{!comentarioEliminaTratamiento}" />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-modal__footer fondo-verde-obscuro">
+                                    <apex:commandButton value="Aceptar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla,comentarioTratamiento"
+                                                        styleclass="slds-button slds-button--neutral"
+                                                        action="{!EliminaTratamiento}" onclick="CierraModales();" />
+                                    <apex:commandButton value="Cancelar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla"
+                                                        styleclass="slds-button slds-button--neutral fondo-amarillo"
+                                                        action="{!FuncionDummy}" onclick="CierraModales();" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-backdrop slds-backdrop--open"></div>
+                </div>
+            </div>
+            
+            <!-- MODAL DIAGNOSTICO -->
+            <div class="facetCargandoStatusListo">
+                <div class="slds-hide" id="ModalAgregaDiagnostico" >
+                    <div role="dialog" tabindex="-1" aria-labelledby="header24" class="slds-modal slds-fade-in-open">
+                        <div class="slds-modal__container">
+                            <div class="slds-modal__header fondo-verde-obscuro">
+                                <a href="javascript:void(0);" class="slds-button slds-modal__close slds-button--icon-inverse cierraFinal" title="Cerrar" id="BotonCierra">
+                                    <svg class="slds-button__icon slds-button__icon--large" aria-hidden="true">
+                                        <use xlink:href="{!URLFOR($Resource.SLDSSALAUNO, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                                    </svg>
+                                </a>
+                                <span class="slds-assistive-text">Cerrar</span>
+                                <h2 id="header24" class="font-amarillo slds-section__title primero"><font id="PonTextoAqui">Agregar Diagnostico</font></h2>
+                                <h2 id="header24" class="font-amarillo slds-section__title segundo"><font id="PonTextoAqui">Eliminar Diagnostico</font></h2>
+                                <h2 id="header24" class="font-amarillo slds-section__title porAutorizarTratamiento"><font id="PonTextoAqui">Calificación de Plan de Salud</font></h2>
+                            </div>
+                            <!-- Agrega Diagnostico -->
+                            <div class="primero">
+                                <div class="slds-modal__content slds-p-around--medium">
+                                    <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label" for="select-01">Diagnostico</label>
+                                                    <div class="slds-form-element__control">
+                                                        <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:200px;"  value="{!seleccionadoModalDiagnostico}" tabindex="0" id="modalDiagnosticoSeleccionado">
+                                                            <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                            <apex:selectOptions value="{!diagnosticoModal}"/>
+                                                            <apex:actionSupport event="onchange" reRender="TratamientoTabla,DiagnosticoTabla" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element">
+                                                    <label class="slds-form-element__label" for="select-01">Ojo</label>
+                                                    <div class="slds-form-element__control">
+                                                        <apex:selectList styleClass="slds-select" multiselect="false" size="1" style="width:200px;"  value="{!ojoDiagnosticoElegido}" tabindex="0" id="modalDiagnosticoOjoSeleccionado">
+                                                            <apex:selectOption itemLabel="Ninguna" itemValue="Ninguno"/>
+                                                            <apex:selectOptions value="{!ojoAElegir}"/>
+                                                            <apex:actionSupport event="onchange" reRender="TratamientoTabla,DiagnosticoTabla" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-modal__footer fondo-verde-obscuro">
+                                    <apex:commandButton value="Agregar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla,modalDiagnosticoSeleccionado,modalDiagnosticoOjoSeleccionado"
+                                                        styleclass="slds-button slds-button--neutral fondo-amarillo"
+                                                        action="{!AgregaDiagnostico}" onclick="CierraModales();" />
+                                </div>
+                            </div>
+                            <!-- Elimina Diagnostico -->
+                            <div class="segundo">
+                                <div class="slds-modal__content slds-p-around--medium">
+                                    <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <label class="slds-form-element__label" for="select-01"></label>
+                                                    <br/>
+                                                    
+                                                    <p class="slds-form-element__label slds-text-heading--small" id="CualTratamiento">
+                                                        
+                                                        
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-modal__footer fondo-verde-obscuro">
+                                    <apex:commandButton value="Aceptar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla"
+                                                        styleclass="slds-button slds-button--neutral"
+                                                        action="{!guardaDiagnosticosEliminadosEnLista}" onclick="CierraModales();" />
+                                    <apex:commandButton value="Cancelar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla"
+                                                        styleclass="slds-button slds-button--neutral fondo-amarillo"
+                                                        action="{!FuncionDummyDos}" onclick="CierraModales();" />
+                                </div>
+                            </div>
+                            
+                            <!-- Calificacion de Doctores -->
+                            <div class="porAutorizarTratamiento">
+                                <div class="slds-modal__content slds-p-around--medium">
+                                    <div class="slds-form-element__group slds-p-around--small slds-form--compound">
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Fecha de Consulta</label>
+                                                        <div class="slds-form-element__control slds-text-color--default">
+                                                            <apex:OutputField value="{!planSalud.Fecha_Consulta__c}" styleClass="slds-input"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01"># Expediente</label>
+                                                        <div class="slds-form-element__control slds-text-color--default">
+                                                            <apex:OutputField value="{!planSalud.Numero_Exp__c}" styleClass="slds-input"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Doctor Jr.</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:OutputField value="{!planSalud.Nombre_Dr_CD__c}" style="border: 1px solid #d8dde6; border-radius: .25rem;"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-size--1-of-2">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Doctor. Sr</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:OutputField value="{!planSalud.Nombre_del_Dr__c}" style="border: 1px solid #d8dde6; border-radius: .25rem;"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Técnica quirúrgica a realizar correctamente asignada</label>
+                                                        <apex:inputField value="{!planSalud.T_cnica_a_realizar__c}" styleClass="slds-input"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Referencia correcta a sub-especialidad</label>
+                                                        <apex:inputField value="{!planSalud.Referencia_Correcta__c}" styleClass="slds-input"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Caso correctamente asignado</label>
+                                                        <apex:inputField value="{!planSalud.Caso_Asignado__c}" styleClass="slds-input"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                            <div class="slds-form-element slds-size--1-of-1">
+                                                <div class="slds-form-element slds-align--absolute-center">
+                                                    <div class="slds-form-element">
+                                                        <label class="slds-form-element__label" for="select-01">Observaciones</label>
+                                                        <div class="slds-form-element__control">
+                                                            <apex:inputField value="{!planSalud.Observaciones__c}" styleClass="slds-input"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-modal__footer fondo-verde-obscuro">
+                                    <apex:commandButton value="Guardar" status="statuslistas" reRender="TratamientoTabla,DiagnosticoTabla"
+                                                        styleclass="slds-button slds-button--neutral fondo-amarillo"
+                                                        action="{!GuardarPS}" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-backdrop slds-backdrop--open"></div>
+                </div>
+            </div>
+            <!--<apex:actionFunction action="{!autoriza}" name="hold" reRender="TratamientoTabla"  />-->
+            <apex:actionFunction name="InvocaMetodoGuardar" action="{!GuardarPS}" />
+            <apex:actionFunction name="ActualizaLosScriptss" action="{!FuncionDummyDos}" />
+            <apex:actionFunction name="eliminaDiagnosticos"  reRender="DiagnosticoTabla, checkTodosDiagnosticos" />
+            
+            <script>
+            //El siguiente script se encarga de controlar los check's para eliminar diagnosticos
+            var arregloNombresDiagnosticos = new Array();
+            function agregaElementoDiagnostico(a,valorCheck,esIndividual){ 
+                //Si es falso significa que seleccionaron la casilla para todos los diagnosticos y valorCheck para este caso 
+                //es el valor de la casilla para todos
+                if(esIndividual=='false'){
+                    //  var listaDiagnosticos=document.getElementById('inputIdDiagnostico').getElementsByClassName('checkboxSelectDiagnosticos');
+                    var listaDiagnosticos=document.getElementsByClassName("checkboxSelectDiagnosticos");
+                    console.log('listaDiagnosticos '+listaDiagnosticos);
+                    for(var i=0; i<listaDiagnosticos.length; i++){      
+                        console.log('toman en cuenta '+$(listaDiagnosticos[i]).hasClass('noTomarEnCuenta'));
+                        if(!$(listaDiagnosticos[i]).hasClass('noTomarEnCuenta')){
+                            if(listaDiagnosticos[i].checked == valorCheck.checked){
+                                console.log('Esta igual');
+                            }
+                            else{                          
+                                listaDiagnosticos[i].checked = valorCheck.checked;  
+                                console.log('Esta diferente');
+                                if(valorCheck.checked==true){
+                                    console.log('push');
+                                    arregloNombresDiagnosticos.push(listaDiagnosticos[i].title);       
+                                }
+                                else{
+                                    console.log('borrar');
+                                    posicionIndex=arregloNombresDiagnosticos.indexOf(listaDiagnosticos[i].title);
+                                    arregloNombresDiagnosticos.splice(posicionIndex,1);                                
+                                }
+                                
+                            }                                               
+                            //console.log('el valor checked '+valorCheck.checked);
+                            console.log('title '+listaDiagnosticos[i].title);                       
+                        }
+                    }
+                    var longitud=arregloNombresDiagnosticos.length;
+                    var mapa = JSON.parse('{!JsonMap}');
+                    console.log('longitud es'+longitud);
+                    console.log(arregloNombresDiagnosticos);
+                    console.log('valorCheck'+valorCheck);
+                    for(cont=0; cont<=longitud-1; cont++){
+                        var tratamiento = mapa[arregloNombresDiagnosticos[cont]];
+                        //console.log(tratamiento);                    
+                    }
+                    $(".checkboxSelectDiagnosticos").prop('disabled',true);
+                    $(".checkboxSelectTodosDiagnosticos").prop('disabled',true);
+                    eliminaDiagnosticos();   
+                }
+                //Esta condicion es para cuando seleccionan cada diagnostico de manddera individual
+                else{
+                    var posicionIndex;
+                    if(valorCheck=='false'){//Si el valor es falso lo va a agregar a la lista
+                        arregloNombresDiagnosticos.push(a);    
+                    }
+                    else{//Si es true lo vamos a quitar de la lista si es que esta
+                        posicionIndex=arregloNombresDiagnosticos.indexOf(a);
+                        arregloNombresDiagnosticos.splice(posicionIndex,1);
+                    }
+                    console.log('la posicion es '+posicionIndex);
+                    var longitud=arregloNombresDiagnosticos.length;
+                    var mapa = JSON.parse('{!JsonMap}');
+                    console.log('longitud es'+longitud);
+                    console.log(arregloNombresDiagnosticos);
+                    console.log('valorCheck'+valorCheck);
+                    for(cont=0; cont<=longitud-1; cont++){
+                        var tratamiento = mapa[arregloNombresDiagnosticos[cont]];
+                        //console.log(tratamiento);                    
+                    }
+                    $(".checkboxSelectDiagnosticos").prop('disabled',true);
+                    eliminaDiagnosticos();                                                                                
+                }
+                console.log('final'+arregloNombresDiagnosticos);
+            }
+            </script>
+            
+            <apex:outputPanel id="javascriFunciones" >
+                <script>
+                function evaluaGuardado(a){
+                    if($(".color-fondo-tabla").hasClass("tabla-uno")){
+                        console.log("Si hay uno seleccionado");
+                        console.log(a);
+                        if(a==""){
+                            console.log("Esta vacia");
+                            if(confirm("No seleccionaste ningun tratamiento nuevo, ¿Desea Continuar?")){
+                                console.log("Aqui hay invocado de guardado");
+                                invocaGuardado();
+                            }
+                            else{                            
+                                console.log("ha decidido cancelar");
+                            } 
+                        }
+                        else{
+                           var comparacion=a.includes("Óptica");
+                            console.log('longitud'+a.length);
+                            var fraseInicial;
+                            if(comparacion){
+                                if(a.length>7){
+                                    fraseInicial='El paciente va a ser enviado a Consejeria y luego a Óptica con los siguientes tratamientos';
+                                    }
+                                else{                                
+                                    fraseInicial='El paciente va a ser enviado a Óptica con los siguientes tratamientos';
+                                    }
+                                }
+                            else{
+                                fraseInicial='El paciente va a ser enviado a consejeria con los siguientes tratamientos';
+                                }
+                            if(confirm(fraseInicial+"\n\n"+a+"\n \nEl checklist debe acompañar al tratamiento")){
+                                console.log("Aqui hay invocado de guardado");
+                                invocaGuardado();
+                            }
+                            else{                            
+                                console.log("ha decidido cancelar");
+                            } 
+                        }
+                    }
+                    else{
+                        console.log("No hay uno seleccionado");
+                        if(confirm("No hay ningun tratamiento seleccionado,el paciente no va a pasar a consejeria ¿Es correcto?")){
+                            invocaGuardado();
+                        }
+                        else{
+                            console.log("ha decidido cancelar");
+                        }
+                        
+                    }
+                    
+                }
+                //Lanza advertencia para preguntarle al doctor si quiere guardar sin tratamientos
+                /* $("#botonParaGuardar").click(function(){
+
+                      if($(".color-fondo-tabla").hasClass("tabla-uno")){
+                        console.log("Si hay uno seleccionado");
+                          invocaGuardado();
+                        }
+                    else{
+                        console.log("No hay uno seleccionado");
+                        if(confirm("No hay ningun tratamiento seleccionado, ¿Desea continuar?")){
+                            invocaGuardado();
+                            }
+                        else{
+                            console.log("ha decidido cancelar");
+                            }
+
+                        }
+                    
+                     console.log(a);
+                alert("El paciente va a ser enviado a consejeria con los siguientes tratamientos\n\n"+a+"\n \nEl checklist debe acompañar al tratamiento");
+                
+                });*/
+                function invocaGuardado(){
+                    //Shows the form for the senior doctors
+                    $("#botonParaGuardar").prop('disabled',true);
+                    $("#botonParaGuardar").val('Guardando...');
+                    $("#botonParaGuardar").addClass('fondo-amarillo');
+                    
+                    var variable = "{!indicaModalFormularioTratamiento}";
+                    var rango = "{!personal.Rango__c}";
+                    if(variable == "verdadero" && rango == "Senior"){
+                        console.log("Entre al if");
+                        $("#ModalAgregaDiagnostico").removeClass("slds-hide");
+                        $("#ModalAgregaDiagnostico").addClass("slds-show");
+                        $(".primero").addClass("slds-hide");
+                        $(".segundo").removeClass("slds-show");
+                        $(".primero").removeClass("slds-show");
+                        $(".segundo").addClass("slds-hide");
+                        $(".porAutorizarTratamiento").removeClass("slds-hide");
+                        $(".porAutorizarTratamiento").addClass("slds-show");
+                        $("#PonTextoAqui").text("Formulario");
+                        $(".cierraFinal").addClass("slds-hide");
+                    }else{
+                        console.log("entre al else");
+                        InvocaMetodoGuardar();
+                    }
+                    console.log('la bandera es '+variable);
+                    console.log("rango es "+rango);
+                }
+                </script>
+            </apex:outputPanel>
+            
+            <script>                        
+            function ocultaTodo(){
+                $(".facetCargandoStatusListo").removeClass("slds-show");
+                $(".facetCargandoStatusListo").addClass("slds-hide");
+            }
+            function muestraTodo(){
+                $(".facetCargandoStatusListo").addClass("slds-show");
+                $(".facetCargandoStatusListo").removeClass("slds-hide");
+            }
+            function CierraModales(){
+                
+                $("#ModalAgregaTratamiento").removeClass("slds-show");
+                $("#ModalAgregaTratamiento").addClass("slds-hide");
+                $("#ModalAgregaDiagnostico").removeClass("slds-show");
+                $("#ModalAgregaDiagnostico").addClass("slds-hide");
+                
+            }
+            
+            function AbreConfirmacion(a){
+                console.log(a);
+                console.log('Ya se abrio el modal');
+                $("#ModalAgregaTratamiento").removeClass("slds-hide");
+                $("#ModalAgregaTratamiento").addClass("slds-show");
+                $(".segundo").removeClass("slds-hide");
+                $(".segundo").addClass("slds-show");
+                $(".primero").removeClass("slds-show");
+                $(".primero").addClass("slds-hide");
+                
+                
+            }
+            //Modal que te confirma cuando vas a eliminar un solo diagnostico
+            $("#iconoParaEliminarDiagnostico").click(function AbreConfirmacionDiagnostico(){
+                
+                /* console.log('a es '+a);
+                var mapa = JSON.parse('{!JsonMap}');
+                console.log(mapa);
+                var tratamiento = mapa[a];
+                console.log(tratamiento);
+                console.log(a);*/
+                var longitud=arregloNombresDiagnosticos.length;
+                var mapa = JSON.parse('{!JsonMap}');
+                console.log('longitud es'+longitud);
+                console.log(arregloNombresDiagnosticos);   
+                var cadenaMostrar='';
+                for(cont=0; cont<=longitud-1; cont++){
+                    var tratamiento = mapa[arregloNombresDiagnosticos[cont]];
+                    if(cadenaMostrar==''){
+                        cadenaMostrar='Se eliminaran los siguientes tratamientos:</br></br><ul><li type="circle">'+tratamiento;
+                    }else{                            
+                        cadenaMostrar=cadenaMostrar+'</li><li type="circle">'+tratamiento;                   
+                    }
+                    //cadenaMostrar=cadenaMostrar+'</br> '+tratamiento;                   
+                }
+                cadenaMostrar=cadenaMostrar+'</li></ul>'
+                $("#CualTratamiento").html(cadenaMostrar);
+                $("#ModalAgregaDiagnostico").removeClass("slds-hide");
+                $("#ModalAgregaDiagnostico").addClass("slds-show");
+                $(".segundo").removeClass("slds-hide");
+                $(".segundo").addClass("slds-show");
+                $(".primero").removeClass("slds-show");
+                $(".primero").addClass("slds-hide");
+                $(".porAutorizarTratamiento").removeClass("slds-show");
+                $(".porAutorizarTratamiento").addClass("slds-hide");
+                $("#PonTextoAqui").text("Diagnostico");
+            })
+            
+            $("#BotonCerrar").click(function(){
+                console.log('cerrar');
+                $("#ModalAgregaTratamiento").removeClass("slds-show");
+                $("#ModalAgregaTratamiento").addClass("slds-hide");
+            })
+            
+            $("#botonAgregar").click(function(){
+                console.log('agregar');
+                $("#ModalAgregaTratamiento").removeClass("slds-hide");
+                $("#ModalAgregaTratamiento").addClass("slds-show");
+                $(".primero").removeClass("slds-hide");
+                $(".segundo").removeClass("slds-show");
+                $(".primero").addClass("slds-show");
+                $(".segundo").addClass("slds-hide");
+            })
+            
+            $("#BotonCierra").click(function(){
+                console.log('cerrar');
+                $("#ModalAgregaDiagnostico").removeClass();
+                $("#ModalAgregaDiagnostico").addClass("slds-hide");
+                $(this).prop('disabled',false);
+                $(this).val('Guardar');
+            })
+            
+            $("#botonAgregaDiagnostico").click(function(){
+                console.log('agregar');
+                $("#ModalAgregaDiagnostico").removeClass("slds-hide");
+                $("#ModalAgregaDiagnostico").addClass("slds-show");
+                $(".primero").removeClass("slds-hide");
+                $(".segundo").removeClass("slds-show");
+                $(".primero").addClass("slds-show");
+                $(".segundo").addClass("slds-hide");
+                $(".porAutorizarTratamiento").removeClass("slds-show");
+                $(".porAutorizarTratamiento").addClass("slds-hide");
+                $("#PonTextoAqui").text("Diagnostico");
+            })
+            
+            if($(".TratamientoTabla").hasClass("list")){
+                
+                $(".TratamientoTabla").removeClass("list");
+            }
+            
+            </script>
+            
+        </article>
+    </html>
+    
+</apex:component>

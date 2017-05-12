@@ -1,0 +1,880 @@
+public class OpticaController {
+    Public String URLLINK{get; set;}
+    Public Map<String,String> mUrlParam{get; set;}
+    Public Etapa_Paciente__c etapa {get; set;}
+    Public Account Paciente{get; set;}
+    Public List<Opportunity> oportunidad{get; set;}
+    Public List<EHR_Care_Plan_SU__c> CarePlan{get; set;}
+    Public List<oportunidadWrapper> oportunidadVisual{get; set;}
+    Public list<SelectOption> estudiosTemplate{get; set;}
+    Public String tratamientoPaginaExterna{get; set;}
+    Public String ojoPaginaExterna{get; set;}
+    Public Plan_de_Salud__c planSalud{get; set;}
+    Public EHR_Consulta__c consulta{get; set;}
+    Public List<SelectOption> tipoLenteContacto{get; set;}
+    Public List<SelectOption> blandoAnual{get; set;}
+    Public List<SelectOption> blandoDesechable{get; set;}
+    Public List<SelectOption> rigido{get; set;}
+    Public List<SelectOption> micas{get; set;}
+    Public List<SelectOption> diseno{get; set;}
+    Public List<SelectOption> material{get; set;}
+    Public List<SelectOption> tratamiento{get; set;}
+    Public List<SelectOption> tipoBlando{get; set;}
+    Public String idMicas{get; set;}
+    Public String idLentesDeContacto{get; set;}
+    Public String idAnteojos{get; set;}
+    Public String URLHojaFrontal {get; set;}
+
+    public OpticaController(){
+        etapa=new Etapa_Paciente__c();
+        oportunidadVisual=new List<oportunidadWrapper>();
+        inicializaEtapa();
+        inicializaWrapper();
+        inicializaEstudiosTemplate();
+
+
+        asignaURL();
+        divideEnColoresTipoEstimacion();
+        inicializaOptica();
+        String urlHost=ApexPages.currentPage().getHeaders().get('Host');
+        URLHojaFrontal='https://'+urlHost+'/apex/PDF_EHR_Resumen_Optometria?id='+consulta.id;
+        System.debug('URLHojaFrontal'+URLHojaFrontal);
+
+    }
+    public void inicializaOptica(){
+        tipoLenteContacto=new List<SelectOption>();
+        Schema.DescribeFieldResult tipoLente=Problem_SU__c.Tipo_de_lente_de_contacto__c.getDescribe();
+        List<Schema.PicklistEntry> plp = tipoLente.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+            tipoLenteContacto.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        blandoAnual=new List<SelectOption>();
+        Schema.DescribeFieldResult bA=Problem_SU__c.Lente_contacto_Blando_anual__c.getDescribe();
+        List<Schema.PicklistEntry> plpdos = bA.getPicklistValues();
+        for(Schema.PicklistEntry f:plpdos){
+            blandoAnual.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        blandoDesechable=new List<SelectOption>();
+        Schema.DescribeFieldResult bD=Problem_SU__c.Lente_contacto_Blando_Desechables__c.getDescribe();
+        List<Schema.PicklistEntry> plptres = bD.getPicklistValues();
+        for(Schema.PicklistEntry f:plptres){
+            blandoDesechable.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        rigido=new List<SelectOption>();
+        Schema.DescribeFieldResult lcr=Problem_SU__c.Lente_contacto_Rigidos__c.getDescribe();
+        List<Schema.PicklistEntry> plpcuatro = lcr.getPicklistValues();
+        for(Schema.PicklistEntry f:plpcuatro){
+            rigido.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        micas=new List<SelectOption>();
+        Schema.DescribeFieldResult mc=Problem_SU__c.Micas__c.getDescribe();
+        List<Schema.PicklistEntry> plpcinco = mc.getPicklistValues();
+        for(Schema.PicklistEntry f:plpcinco){
+            micas.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        diseno=new List<SelectOption>();
+        Schema.DescribeFieldResult md=Problem_SU__c.Micas_Diseno__c.getDescribe();
+        List<Schema.PicklistEntry> plpseis = md.getPicklistValues();
+        for(Schema.PicklistEntry f:plpseis){
+            diseno.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        material=new List<SelectOption>();
+        Schema.DescribeFieldResult mm=Problem_SU__c.Micas_Material__c.getDescribe();
+        List<Schema.PicklistEntry> plpsiete = mm.getPicklistValues();
+        for(Schema.PicklistEntry f:plpsiete){
+            material.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        tratamiento=new List<SelectOption>();
+        Schema.DescribeFieldResult mt=Problem_SU__c.Micas_Tratamiento__c.getDescribe();
+        List<Schema.PicklistEntry> plpocho = mt.getPicklistValues();
+        for(Schema.PicklistEntry f:plpocho){
+            tratamiento.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+
+        tipoBlando=new List<SelectOption>();
+        Schema.DescribeFieldResult tB=Problem_SU__c.Tipo_de_Lente_de_Contacto_Blando__c.getDescribe();
+        List<Schema.PicklistEntry> plpnueve = tB.getPicklistValues();
+        for(Schema.PicklistEntry f:plpnueve){
+            tipoBlando.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+    public void actualizaOportunidades(){
+        System.debug('Actualizar Oportunidades despues de cargar');
+        list<Opportunity> listaUpdate=new list<Opportunity>();
+        for(oportunidadWrapper i:oportunidadVisual){
+            listaUpdate.add(i.oportunidad);
+        }
+        update listaUpdate;
+    }
+    public void divideEnColoresTipoEstimacion(){
+        for(oportunidadWrapper i:oportunidadVisual){
+            i.colorFondo='fondo-blanco';
+        }
+
+    }
+    public void funcionGenial(){ //actualiza el valor de la cirugia en la tabla principal
+        System.debug('funcion dummy');
+        for(oportunidadWrapper i: oportunidadVisual){
+            i.nombreProblema=i.opcionesProblems.get(i.problema.Care_Plan_Template_Problem_SU__c);
+            System.debug('i nombre problema'+i.nombreProblema);
+        }
+
+
+    }
+    public void funcionActualizaEstimacion(){ //actualiza el valor de la cirugia en la tabla principal
+        System.debug('funcion dummy');
+        for(oportunidadWrapper i: oportunidadVisual){
+            system.debug('i '+i.oportunidad);
+            i.oportunidad=[ Select id, Name, AccountId, Problem_SU__c,Problem_SU__r.Care_Plan_Template_Problem_SU__c ,
+                           Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name ,Problem_SU__r.Consejero__r.Name,
+                           Problem_SU__r.Anticipo_de_lentes__c, Problem_SU__r.Folio_TNT__c, Problem_SU__r.Fecha_entrega_de_lentes__c,
+                           Problem_SU__r.Consejero__c,Acuerdo_con_consejero__c,Probability, RecordTypeId, StageName,RecordType.Name,
+                           CreatedDate, Fecha_de_Cirugia__c,CreatedById, CreatedBy.Name,Owner.Name,OwnerId,
+                           Problem_SU__r.Tipo_de_lente_de_contacto__c,Problem_SU__r.Lente_contacto_Blando_Anual__c,
+                           Problem_SU__r.Lente_contacto_Blando_Desechables__c,Problem_SU__r.Lente_contacto_Rigidos__c,
+                           Problem_SU__r.Micas__c,Problem_SU__r.Micas_Diseno__c,Problem_SU__r.Micas_Material__c,
+                           Problem_SU__r.Micas_Tratamiento__c, Problem_SU__r.Observaciones_Optica__c,Problem_SU__r.Tipo_de_Lente_de_Contacto_Blando__c,
+                           EHR_Care_Plan_SU__c,EHR_Care_Plan_SU__r.Nota__c,EHR_Care_Plan_SU__r.Creado_x__c, EHR_Care_Plan_SU__r.Autorizado_por__c,
+                           EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name,EHR_Care_Plan_SU__r.Ojo__c  ,
+                           EHR_Care_Plan_SU__r.Urgente__c, EHR_Care_Plan_SU__r.Cx_Catarata__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c,
+                           EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c,EHR_Care_Plan_SU__r.Estudios__c,
+                           CloseDate, ok_SubtotalDescuentos__c, Ok_Subtotal_Importe__c, SubTotalImpuestos__c, SubTotalProducto__c, Amount,Optometrista_Responsable__c
+                           from Opportunity where id=:i.oportunidad.id];
+        }
+
+
+    }
+    public boolean yaSeElaboroEnFlujoEstimacion{get; set;}
+    public void generaEstimacionOptica(){
+        yaSeElaboroEnFlujoEstimacion=false;
+        System.debug('Genera Estimacion de optica');
+        Plan_de_Salud__c planSalud;
+        try{
+            planSalud = [SELECT id,Name, Paciente__c,Fecha_Consulta__c, Numero_Exp__c, Nombre_Dr_CD__c, Nombre_del_Dr__c,
+                         T_cnica_a_realizar__c, Referencia_Correcta__c, Caso_Asignado__c, Observaciones__c
+                         FROM Plan_de_Salud__c WHERE Paciente__c = :etapa.Paciente__c ];
+        }catch(exception e){
+            //System.debug('No habia plan de salud');
+        }
+        if(planSalud == null){
+            planSalud = new Plan_de_Salud__c();
+            planSalud.Paciente__c          = etapa.Paciente__c;
+            planSalud.Fecha_Elaboracion__c = Date.today();
+            planSalud.Name                 = 'Plan de salud';
+            insert planSalud;
+            //System.debug('se ha insertado un plan de saludd');
+        }
+
+        EHR_Care_Plan_Template_SU__c plantillaSeguroMedico = new EHR_Care_Plan_Template_SU__c();
+        plantillaSeguroMedico = [SELECT id, Name
+                                 FROM EHR_Care_Plan_Template_SU__c
+                                 WHERE Name LIKE 'Óptica' LIMIT 1];
+
+        // Selecciona el ojo al que se le va a insetar el tratamiento
+        // <<< Busca si existe care plant, si no existe lo inserta
+        EHR_Care_Plan_SU__c carePlan = new EHR_Care_Plan_SU__c();
+        carePlan.Ojo__c      = 'AO';
+        carePlan.Paciente__c                   = etapa.Paciente__c;
+        carePlan.Plan_de_Salud__c              = planSalud.id;
+        carePlan.Fecha_Elaboracion__c          = Date.today();
+        carePlan.Plantilla_de_Seguro_Medico__c = plantillaSeguroMedico.id;
+
+        if(etapa.Personal__r.Rango__c == 'Senior'){
+            carePlan.Estado__c         = 'En Proceso';
+            carePlan.Autorizado_por__c = etapa.Personal__c;
+        }else{
+            carePlan.Estado__c = 'Por Autorizar';
+        }
+
+
+        carePlan.Creado_x__c = etapa.Personal__c;
+        upsert carePlan; // Inserta tratamiento
+
+        //Se crea la estimación asociada, no lo separo en una funcion puesto que solo se va a crear una estimacion de optica
+        Opportunity opp         = new Opportunity();
+        RecordType tipoReg      = new RecordType();
+        Pricebook2 listaPrecios = new Pricebook2();
+        Visita__c visita        = new Visita__c();
+        Almacen__c almacen= new Almacen__c();
+        tipoReg = [SELECT Id,Name, SobjectType, IsActive, IsPersonType FROM RecordType WHERE IsActive=true AND Name like 'Optica' LIMIT 1];
+        if(!test.isRunningTest()){
+            listaPrecios=[SELECT Id, Name, Id_Netsuite__c, Isstandard FROM PriceBook2
+                          WHERE Isstandard =true LIMIT 1];
+        }
+        visita = [SELECT id, name, Paciente__c, Paciente__r.Campana__c,
+                  Clinica__c, Paciente__r.Unidad_de_negocio__c
+                  FROM Visita__c
+                  WHERE id=:etapa.Visita__c];
+        almacen = [SELECT Id, Name
+                   FROM Almacen__c
+                   WHERE Clinica__c=:visita.Clinica__c limit 1];
+        //system.debug('Visita es '+visita);
+
+        Opp.PriceBook2id         = listaPrecios.id;
+        Opp.RecordTypeId         = tipoReg.id;
+        Opp.CloseDate            = Date.today().addMonths(3);
+        Opp.Busca_Visita__c      = visita.id;
+        Opp.BuscaClinica__c      = visita.Clinica__c;
+        Opp.Almacen__c           = almacen.id;
+        Opp.Unidad_de_negocio__c = visita.Paciente__r.Unidad_de_negocio__c;
+        Opp.CampaignId           = visita.Paciente__r.Campana__c;
+        Opp.AccountId            = visita.Paciente__c;
+        Opp.StageName            = 'Potencial Arranque';
+        Opp.Name                 = 'Nombre de la estimacion';
+        Opp.EHR_Care_Plan_SU__c  = carePlan.id;
+        insert Opp; // Inseta estimacion
+        Opp=[SELECT id, Name, AccountId, Problem_SU__c,Problem_SU__r.Care_Plan_Template_Problem_SU__c ,
+                       Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name ,Problem_SU__r.Consejero__r.Name,
+                       Problem_SU__r.Anticipo_de_lentes__c, Problem_SU__r.Folio_TNT__c, Problem_SU__r.Fecha_entrega_de_lentes__c,
+                       Problem_SU__r.Consejero__c,Acuerdo_con_consejero__c,Probability, RecordTypeId, StageName,RecordType.Name,
+                       CreatedDate, Fecha_de_Cirugia__c,CreatedById, CreatedBy.Name,Owner.Name,OwnerId,
+                       Problem_SU__r.Tipo_de_lente_de_contacto__c,Problem_SU__r.Lente_contacto_Blando_Anual__c,
+                       Problem_SU__r.Lente_contacto_Blando_Desechables__c,Problem_SU__r.Lente_contacto_Rigidos__c,
+                       Problem_SU__r.Micas__c,Problem_SU__r.Micas_Diseno__c,Problem_SU__r.Micas_Material__c,
+                       Problem_SU__r.Micas_Tratamiento__c,Problem_SU__r.Observaciones_Optica__c,Problem_SU__r.Tipo_de_Lente_de_Contacto_Blando__c,
+                       EHR_Care_Plan_SU__c,EHR_Care_Plan_SU__r.Nota__c,EHR_Care_Plan_SU__r.Creado_x__c, EHR_Care_Plan_SU__r.Autorizado_por__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name,EHR_Care_Plan_SU__r.Ojo__c  ,
+                       EHR_Care_Plan_SU__r.Urgente__c, EHR_Care_Plan_SU__r.Cx_Catarata__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c,EHR_Care_Plan_SU__r.Estudios__c,
+                       CloseDate, ok_SubtotalDescuentos__c, Ok_Subtotal_Importe__c, SubTotalImpuestos__c, SubTotalProducto__c, Amount,Optometrista_Responsable__c
+                       FROM Opportunity
+                       WHERE id=:Opp.id ];
+        integer k=oportunidadVisual.size();
+         List<Care_Plan_Template_Problem_SU__c> plantillasProblemasLista=new List<Care_Plan_Template_Problem_SU__c>();
+        plantillasProblemasLista=[select id, Care_Plan_Template_SU__c, Name FROM Care_Plan_Template_Problem_SU__c
+                                  where Care_Plan_Template_SU__c = :carePlan.Plantilla_de_Seguro_Medico__c ];
+        system.debug('fecha creacion'+Opp.id);
+            oportunidadWrapper OW=new oportunidadWrapper(Opp.CreatedDate);
+
+            Opportunity opo=Opp;
+            System.debug('probability'+Opp.Probability);
+            System.debug('record type '+Opp.RecordType.Name);
+            System.debug('stage name'+Opp.StageName);
+            OW.oportunidad=opo;
+
+            System.debug('AgendaTX__c'+Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c);
+            if(Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c!='Consejeria'){
+                OW.consejeriaTratamiento=false;
+            }
+            else{
+                OW.consejeriaTratamiento=true;
+            }
+            System.debug('consejeriaTratamiento '+OW.consejeriaTratamiento);
+            System.debug('multipicklist'+Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c);
+            String cadenaMultipicklist=Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c;
+            List<String> separadorMultipick=new List<String>();
+            System.debug('cadenaMultipicklist'+cadenaMultipicklist);
+            try{
+                separadorMultipick=cadenaMultipicklist.split(';');
+                OW.opcionEstudiosPick=new List<String>();
+            }catch(Exception e){
+                System.debug('no habia estudios predefinidos');
+            }
+            for(String h:separadorMultipick){
+                OW.opcionEstudiosPick.add(h);
+            }
+
+
+
+            EHR_Care_Plan_SU__c tratTemporal = new EHR_Care_Plan_SU__c();
+            tratTemporal.id                            = Opp.EHR_Care_Plan_SU__c;
+            tratTemporal.Nota__c                       = Opp.EHR_Care_Plan_SU__r.Nota__c;
+            tratTemporal.Creado_x__c                   = Opp.EHR_Care_Plan_SU__r.Creado_x__c;
+            tratTemporal.Autorizado_por__c             = Opp.EHR_Care_Plan_SU__r.Autorizado_por__c;
+            tratTemporal.Plantilla_de_Seguro_Medico__c = Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c;
+            tratTemporal.Urgente__c                    = Opp.EHR_Care_Plan_SU__r.Urgente__c;
+            tratTemporal.Estudios__c                   = Opp.EHR_Care_Plan_SU__r.Estudios__c;
+            tratTemporal.Cx_Catarata__c                = Opp.EHR_Care_Plan_SU__r.Cx_Catarata__c;
+            tratTemporal.Estudios__c                   = Opp.EHR_Care_Plan_SU__r.Estudios__c;
+            system.debug(' hi '+Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name);// tratTemporal.EHR_Care_Plan_Template_SU__r.Name= opp.EHR_Care_Plan_SU__r.EHR_Care_Plan_Template_SU__r.Name;
+            OW.tratamiento       = tratTemporal;
+            OW.nombreTratamiento = Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name;
+            OW.ojo               = Opp.EHR_Care_Plan_SU__r.Ojo__c ;
+            OW.opcionesCx        = new List<SelectOption>();
+            OW.opcionesProblems  = new Map<id,String>();
+            OW.opcionesCx.add(new SelectOption('', 'Ninguno'));
+            for(Care_Plan_Template_Problem_SU__c i:plantillasProblemasLista){
+                if(Opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c==i.Care_Plan_Template_SU__c){
+                    OW.opcionesCx.add(new SelectOption(i.id, i.Name));
+                    OW.opcionesProblems.put(i.id, i.Name);
+                    if(i.Name=='Solo Micas'){
+                        idMicas=i.id;
+                    }else if(i.Name=='Lentes de Contacto'){
+                        idLentesDeContacto=i.id;
+                    }else if(i.Name=='Anteojos'){
+                        idAnteojos=i.id;
+                    }
+                }
+            }
+
+            if(Opp.Problem_SU__c!=null){
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                problTemporal.id                               = Opp.Problem_SU__c;
+                problTemporal.Ojo_a_Operar__c                  = Opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                problTemporal.Care_Plan_Template_Problem_SU__c = Opp.Problem_SU__r.Care_Plan_Template_Problem_SU__c;
+                problTemporal.Tipo_de_lente_de_contacto__c=Opp.Problem_SU__r.Tipo_de_lente_de_contacto__c;
+                problTemporal.Lente_contacto_Blando_Anual__c=Opp.Problem_SU__r.Lente_contacto_Blando_Anual__c;
+                problTemporal.Lente_contacto_Blando_Desechables__c=Opp.Problem_SU__r.Lente_contacto_Blando_Desechables__c;
+                problTemporal.Lente_contacto_Rigidos__c=Opp.Problem_SU__r.Lente_contacto_Rigidos__c;
+                problTemporal.Micas__c=Opp.Problem_SU__r.Micas__c;
+                problTemporal.Micas_Diseno__c=Opp.Problem_SU__r.Micas_Diseno__c;
+                problTemporal.Micas_Material__c=Opp.Problem_SU__r.Micas_Material__c;
+                problTemporal.Micas_Tratamiento__c=Opp.Problem_SU__r.Micas_Tratamiento__c;
+                problTemporal.Observaciones_Optica__c=Opp.Problem_SU__r.Observaciones_Optica__c;
+                problTemporal.Tipo_de_Lente_de_Contacto_Blando__c=Opp.Problem_SU__r.Tipo_de_Lente_de_Contacto_Blando__c;
+
+                // problTemporal.Acuerdo_de_Consejero__c=opp.Acuerdo_con_consejero__c;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                OW.personaConsejero      = Opp.Problem_SU__r.Consejero__r.Name;
+                OW.propietarioEstimacion = Opp.Owner.Name;
+                OW.problema=problTemporal;
+                if(Opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name!=null){
+                    OW.nombreProblema=Opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                }
+
+            }else{
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                Date fecha=Date.today();
+
+                problTemporal.Fecha_entrega_de_lentes__c=fecha.addDays(10);
+                // problTemporal.Name='Problema';
+                problTemporal.Ojo_a_Operar__c = Opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                OW.personaConsejero      = UserInfo.getName();
+                OW.propietarioEstimacion = UserInfo.getName();
+                OW.oportunidad.OwnerId   = UserInfo.getUserId();
+                System.debug( OW.oportunidad.OwnerId+' OW.oportunidad.OwnerId');
+                OW.oportunidad.Optometrista_Responsable__c=etapa.Personal__c;
+                OW.problema              = problTemporal;
+            }
+            OW.identificadorEstimacion = Opp.id;
+            OW.fechaProgramacion       = Opp.Fecha_de_Cirugia__c;
+            OW.numeroContador          = k + 1;
+            k = k + 1;
+            oportunidadVisual.add(OW);
+
+
+
+
+    }
+    public void inicializaEstudiosTemplate(){
+        estudiosTemplate=new List<SelectOption>();
+
+        Schema.DescribeFieldResult EstudiosCx=EHR_Care_Plan_Template_SU__c.Estudios__c.getDescribe();
+        List<Schema.PicklistEntry> plp = EstudiosCx.getPicklistValues();
+        for(Schema.PicklistEntry f:plp){
+
+            system.debug('Estudios'+f.getLabel());
+            system.debug('Estudios'+f.getValue());
+            System.debug('estudios '+f);
+            estudiosTemplate.add(new SelectOption(f.getLabel(), f.getValue()));
+        }
+    }
+    Public void inicializaWrapper(){
+        System.debug('inicializa wrapper');
+        Integer k=0;
+        List<id> identificadoresTem=new List<id>();
+
+        for(Opportunity opp:oportunidad){
+            identificadoresTem.add(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c);
+        }
+
+        List<Care_Plan_Template_Problem_SU__c> plantillasProblemasLista=new List<Care_Plan_Template_Problem_SU__c>();
+        plantillasProblemasLista=[select id, Care_Plan_Template_SU__c, Name FROM Care_Plan_Template_Problem_SU__c
+                                  where Care_Plan_Template_SU__c in:identificadoresTem ];
+
+        for(Opportunity opp:oportunidad){
+            oportunidadWrapper OW=new oportunidadWrapper(opp.CreatedDate);
+
+            Opportunity opo=opp;
+            System.debug('probability'+opp.Probability);
+            System.debug('record type '+opp.RecordType.Name);
+            System.debug('stage name'+opp.StageName);
+            OW.oportunidad=opo;
+
+            System.debug('AgendaTX__c'+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c);
+            if(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c!='Consejeria'){
+                OW.consejeriaTratamiento=false;
+            }
+            else{
+                OW.consejeriaTratamiento=true;
+            }
+            System.debug('consejeriaTratamiento '+OW.consejeriaTratamiento);
+            System.debug('multipicklist'+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c);
+            String cadenaMultipicklist=opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c;
+            List<String> separadorMultipick=new List<String>();
+            System.debug('cadenaMultipicklist'+cadenaMultipicklist);
+            try{
+                separadorMultipick=cadenaMultipicklist.split(';');
+                OW.opcionEstudiosPick=new List<String>();
+            }catch(Exception e){
+                System.debug('no habia estudios predefinidos');
+            }
+            for(String h:separadorMultipick){
+                OW.opcionEstudiosPick.add(h);
+            }
+
+
+
+            EHR_Care_Plan_SU__c tratTemporal = new EHR_Care_Plan_SU__c();
+            tratTemporal.id                            = opp.EHR_Care_Plan_SU__c;
+            tratTemporal.Nota__c                       = opp.EHR_Care_Plan_SU__r.Nota__c;
+            tratTemporal.Creado_x__c                   = opp.EHR_Care_Plan_SU__r.Creado_x__c;
+            tratTemporal.Autorizado_por__c             = opp.EHR_Care_Plan_SU__r.Autorizado_por__c;
+            tratTemporal.Plantilla_de_Seguro_Medico__c = opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c;
+            tratTemporal.Urgente__c                    = opp.EHR_Care_Plan_SU__r.Urgente__c;
+            tratTemporal.Estudios__c                   = opp.EHR_Care_Plan_SU__r.Estudios__c;
+            tratTemporal.Cx_Catarata__c                = opp.EHR_Care_Plan_SU__r.Cx_Catarata__c;
+            tratTemporal.Estudios__c                   = opp.EHR_Care_Plan_SU__r.Estudios__c;
+            system.debug(' hi '+opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name);// tratTemporal.EHR_Care_Plan_Template_SU__r.Name= opp.EHR_Care_Plan_SU__r.EHR_Care_Plan_Template_SU__r.Name;
+            OW.tratamiento       = tratTemporal;
+            OW.nombreTratamiento = opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name;
+            OW.ojo               = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+            OW.opcionesCx        = new List<SelectOption>();
+            OW.opcionesProblems  = new Map<id,String>();
+            OW.opcionesCx.add(new SelectOption('', 'Ninguno'));
+            for(Care_Plan_Template_Problem_SU__c i:plantillasProblemasLista){
+                if(opp.EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c==i.Care_Plan_Template_SU__c){
+                    OW.opcionesCx.add(new SelectOption(i.id, i.Name));
+                    OW.opcionesProblems.put(i.id, i.Name);
+                    if(i.Name=='Solo Micas'){
+                        idMicas=i.id;
+                    }else if(i.Name=='Lentes de Contacto'){
+                        idLentesDeContacto=i.id;
+                    }else if(i.Name=='Anteojos'){
+                        idAnteojos=i.id;
+                    }
+                }
+            }
+
+            if(opp.Problem_SU__c!=null){
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                problTemporal.id                               = opp.Problem_SU__c;
+                problTemporal.Ojo_a_Operar__c                  = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                problTemporal.Care_Plan_Template_Problem_SU__c = opp.Problem_SU__r.Care_Plan_Template_Problem_SU__c;
+                problTemporal.Tipo_de_lente_de_contacto__c=opp.Problem_SU__r.Tipo_de_lente_de_contacto__c;
+                problTemporal.Lente_contacto_Blando_Anual__c=opp.Problem_SU__r.Lente_contacto_Blando_Anual__c;
+                problTemporal.Lente_contacto_Blando_Desechables__c=opp.Problem_SU__r.Lente_contacto_Blando_Desechables__c;
+                problTemporal.Lente_contacto_Rigidos__c=opp.Problem_SU__r.Lente_contacto_Rigidos__c;
+                problTemporal.Micas__c=opp.Problem_SU__r.Micas__c;
+                problTemporal.Micas_Diseno__c=opp.Problem_SU__r.Micas_Diseno__c;
+                problTemporal.Micas_Material__c=opp.Problem_SU__r.Micas_Material__c;
+                problTemporal.Micas_Tratamiento__c=opp.Problem_SU__r.Micas_Tratamiento__c;
+                problTemporal.Observaciones_Optica__c=opp.Problem_SU__r.Observaciones_Optica__c;
+                problTemporal.Tipo_de_Lente_de_Contacto_Blando__c=opp.Problem_SU__r.Tipo_de_Lente_de_Contacto_Blando__c;
+
+                // problTemporal.Acuerdo_de_Consejero__c=opp.Acuerdo_con_consejero__c;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                OW.personaConsejero      = opp.Problem_SU__r.Consejero__r.Name;
+                OW.propietarioEstimacion = opp.Owner.Name;
+                OW.problema=problTemporal;
+                if(opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name!=null){
+                    OW.nombreProblema=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                }
+
+            }else{
+                Problem_SU__c problTemporal = new Problem_SU__c();
+                Date fecha=Date.today();
+
+                problTemporal.Fecha_entrega_de_lentes__c=fecha.addDays(10);
+                // problTemporal.Name='Problema';
+                problTemporal.Ojo_a_Operar__c = opp.EHR_Care_Plan_SU__r.Ojo__c ;
+                //problTemporal.Care_Plan_Template_Problem_SU__r.Name=opp.Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name;
+                OW.personaConsejero      = UserInfo.getName();
+                OW.propietarioEstimacion = UserInfo.getName();
+                OW.oportunidad.OwnerId   = UserInfo.getUserId();
+                System.debug( OW.oportunidad.OwnerId+' OW.oportunidad.OwnerId');
+                OW.oportunidad.Optometrista_Responsable__c=etapa.Personal__c;
+                OW.problema              = problTemporal;
+            }
+            OW.identificadorEstimacion = opp.id;
+            OW.fechaProgramacion       = opp.Fecha_de_Cirugia__c;
+            OW.numeroContador          = k + 1;
+            k = k + 1;
+            oportunidadVisual.add(OW);
+
+        }
+    }
+    public pageReference asignaURLPDF(){
+        //PageReference pg = new PageReference('/apex/PdfInfo?id='+etapa.Paciente__c);
+        System.debug('consulta.id'+consulta.id);
+        PageReference pg=new PageReference('/apex/PDF_EHR_Resumen_Optometria?id='+consulta.id);
+        return pg;
+    }
+    Public void inicializaEtapa(){
+        String idEtapa;
+        Paciente    = new Account();
+        oportunidad = new List<Opportunity>();
+        CarePlan    = new List<EHR_Care_Plan_SU__c>();
+        planSalud   = new Plan_de_Salud__c ();
+        consulta    = new EHR_Consulta__c ();
+        mUrlParam   = ApexPages.currentPage().getParameters();
+        if(mUrlParam.containsKey('IdEtapa')){
+            idEtapa=mUrlParam.get('IdEtapa');
+        }else{
+            //lanzar una excepcion
+        }
+        etapa    = [SELECT id,Name,Personal__c,Personal__r.Name,Paciente__c,Stamp_Inicio_Atencion__c,Stamp_Fin_Atencion__c,Estatus__c,Configuracion_Flujo__r.Etapas_Precedentes__c,
+                    Visita__c,Clinica__c,Flujo__c,Flujo__r.Name,Etapas_Obligadas__c,Clinica__r.Name,Consultorio__c, Etapa__c,Personal__r.Rango__c,Configuracion_Flujo__r.Genera_estimacion_optica__c
+                    FROM Etapa_Paciente__c WHERE id=:idEtapa];
+        //if(etapa.Flujo__r.Name=='COMPRA OPTICA-FARMACIA'){
+        if(etapa.Configuracion_Flujo__r.Genera_estimacion_optica__c){
+            yaSeElaboroEnFlujoEstimacion=true;
+        }else{
+            yaSeElaboroEnFlujoEstimacion=false;
+        }
+        System.debug('yaSeElaboroEnFlujoEstimacion'+yaSeElaboroEnFlujoEstimacion);
+        Paciente = [SELECT id, Name,FirstName, LastName, Phone,PersonMobilePhone, PersonEmail,BillingStreet, BillingCity, BillingState, BillingCountry, BillingPostalCode, N_mero_exterior_de_facturaci_n__c, Colonia_de_facturaci_n__c, Numero_interior__c FROM Account WHERE id=:etapa.Paciente__c ];
+        oportunidad = [SELECT id, Name, AccountId, Problem_SU__c,Problem_SU__r.Care_Plan_Template_Problem_SU__c ,
+                       Problem_SU__r.Care_Plan_Template_Problem_SU__r.Name ,Problem_SU__r.Consejero__r.Name,
+                       Problem_SU__r.Anticipo_de_lentes__c, Problem_SU__r.Folio_TNT__c, Problem_SU__r.Fecha_entrega_de_lentes__c,
+                       Problem_SU__r.Consejero__c,Acuerdo_con_consejero__c,Probability, RecordTypeId, StageName,RecordType.Name,
+                       CreatedDate, Fecha_de_Cirugia__c,CreatedById, CreatedBy.Name,Owner.Name,OwnerId,
+                       Problem_SU__r.Tipo_de_lente_de_contacto__c,Problem_SU__r.Lente_contacto_Blando_Anual__c,
+                       Problem_SU__r.Lente_contacto_Blando_Desechables__c,Problem_SU__r.Lente_contacto_Rigidos__c,
+                       Problem_SU__r.Micas__c,Problem_SU__r.Micas_Diseno__c,Problem_SU__r.Micas_Material__c,
+                       Problem_SU__r.Micas_Tratamiento__c,Problem_SU__r.Observaciones_Optica__c,Problem_SU__r.Tipo_de_Lente_de_Contacto_Blando__c,
+                       EHR_Care_Plan_SU__c,EHR_Care_Plan_SU__r.Nota__c,EHR_Care_Plan_SU__r.Creado_x__c, EHR_Care_Plan_SU__r.Autorizado_por__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Name,EHR_Care_Plan_SU__r.Ojo__c  ,
+                       EHR_Care_Plan_SU__r.Urgente__c, EHR_Care_Plan_SU__r.Cx_Catarata__c,EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.AgendaTX__c,
+                       EHR_Care_Plan_SU__r.Plantilla_de_Seguro_Medico__r.Estudios__c,EHR_Care_Plan_SU__r.Estudios__c,
+                       CloseDate, ok_SubtotalDescuentos__c, Ok_Subtotal_Importe__c, SubTotalImpuestos__c, SubTotalProducto__c, Amount,Optometrista_Responsable__c
+                       FROM Opportunity
+                       WHERE AccountId=:Paciente.id AND EHR_Care_Plan_SU__c != null AND RecordType.Name = 'Optica'
+                       ORDER BY CreatedDate  ];
+        CarePlan = [SELECT Id, Name, Paciente__c ,Plantilla_de_Seguro_Medico__c ,
+                    Ojo__c,Estado__c ,Plantilla_de_Seguro_Medico__r.Name
+                    FROM EHR_Care_Plan_SU__c WHERE Paciente__c = :Paciente.id];
+        planSalud = [SELECT Id, Name FROM Plan_de_Salud__c WHERE Paciente__c = :Paciente.id limit 1];
+        try{
+            consulta = [SELECT Id, Name, CreatedDate,Agudeza_visual_Lejana_OD__c, Agudeza_visual_Lejana_OI__c,
+                        Motivo_de_consulta__c,Motivo_de_consulta_Medico__c,Diagnostico_refractivo_OD__c,Diagnostico_refractivo_OI__c ,
+                        Capacidad_visual_OD__c,Capacidad_visual_OI__c,Esfera_OD__c,Cilindro_OD_Ref__c,Eje_OD_Ref__c,
+                        Adicion__c,
+                        Esfera_OI__c,Cilindro_OI_Ref__c,Eje_OI_Ref__c
+                        FROM EHR_Consulta__c WHERE CreatedDate = TODAY AND Paciente__c = :Paciente.id limit 1];//CreatedDate = TODAY AND
+        }catch(exception e){
+
+        }
+        System.debug('etapa '+etapa);
+        System.debug('Paciente '+Paciente);
+        System.debug('oportunidad'+oportunidad);
+        // System.debug('CarePlan'+CarePlan);
+    }
+
+
+    Public pageReference abreEstimacion(){
+        PageReference pg ;
+        for(oportunidadWrapper i:oportunidadVisual){
+            if(i.nombreTratamiento==tratamientoPaginaExterna&&i.ojo==ojoPaginaExterna){
+                pg=new PageReference('/'+i.identificadorEstimacion);
+                System.debug('antes de regresar es '+i.identificadorEstimacion);
+                break;
+            }
+        }
+
+        return pg;
+    }
+    Public void asignaURL(){
+        if(paciente.PersonMobilePhone==null && paciente.PersonEmail==null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        } else if(paciente.PersonMobilePhone==null&&paciente.PersonEmail!=null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&email='+paciente.PersonEmail+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        } else if(paciente.PersonMobilePhone!=null&&paciente.PersonEmail==null){
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&phone='+paciente.PersonMobilePhone+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        }else{
+            URLLINK='https://salauno.acuityscheduling.com/schedule.php?owner=12651758&appointmentType=category%3AServicios+Privados+%28no+visibles+al+p%C3%BAblico%29&firstName='+paciente.FirstName+'&lastName='+paciente.LastName+'&phone='+paciente.PersonMobilePhone+'&email='+paciente.PersonEmail+'&field:2033261=Salesforce&field:2033264=Registro&field:2036730='+UserInfo.getUserId();
+        }
+        System.debug('URLLINK'+URLLINK);
+    }
+    public pageReference GoToEstimacion(){
+        PageReference page = new PageReference(URLLINK);
+        return page;
+
+    }
+    /* Public Date fecha{get; set;}
+Public String Clase{get; set;}*/
+    public class oportunidadWrapper{
+
+        Public Date fechaCreacionD{get; set;}
+        Public EHR_Care_Plan_SU__c tratamiento{get; set;}
+        Public Opportunity oportunidad{get; set;}
+        Public String nombreTratamiento{get; set;}
+        Public Date fechaProgramacion {get; set;}
+        Public String propietarioEstimacion{get; set;}
+        Public String personaConsejero{get; set;}
+        Public ID identificadorEstimacion{get; set;}
+        Public Problem_SU__c problema{get; set;}
+        Public String ojo{get; set;}
+        Public Integer numeroContador{get; set;}
+        Public List<SelectOption> opcionesCx{get; set;}
+        Public map<id,String> opcionesProblems{get; set;}
+        Public String nombreProblema{get; set;}
+        Public boolean consejeriaTratamiento{get; set;}
+        Public List<String> opcionEstudiosPick {get; set;}
+        Public String colorFondo{get; set;}
+
+        public oportunidadWrapper(DateTime dT){
+            fechaCreacionD=date.newinstance(dT.year(), dT.month(), dT.day());
+        }
+
+    }
+    Public void funcdum(){
+        System.debug('ENTRE A LA FUNCION PRUEBA');
+
+    }
+    Public List<string> lEtapasDos{get; set;}
+    Public Etapa_Paciente__c oEPacienteDos{get; set;}
+    public pageReference AbandonoConsejeria(){
+        System.debug('Entre a abandono');
+        oEPacienteDos=etapa;
+        PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPacienteDos.Personal__c);
+        PagewId.getParameters().put('Clinica',oEPacienteDos.Clinica__r.Name);
+        PagewId.getParameters().put('Consultorio',oEPacienteDos.Consultorio__c);
+        PagewId.setRedirect(true);
+        oEPacienteDos.Estatus__c               = 'Abandono';
+        oEPacienteDos.Stamp_Inicio_Atencion__c = null;
+        oEPacienteDos.Personal__c              = oEPacienteDos.Personal__c;
+        update oEPacienteDos;
+        return PagewId;
+    }
+    public class problemaOportunidadWrapper{
+        public Problem_SU__c problema{get; set;}
+        public Opportunity oportunidad{get; set;}
+
+        public problemaOportunidadWrapper(Problem_SU__c pr,Opportunity op){
+            this.problema=pr;
+            this.oportunidad=op;
+        }
+
+    }
+    public pageReference GuardarConsejeriaSave(){
+        //MIKE
+        List<Problem_SU__c> problemasAgregar=new List<Problem_SU__c>();
+        List<Opportunity> oportunidadesActualizar=new List<Opportunity>();
+        List<problemaOportunidadWrapper> listaPOW=new List<problemaOportunidadWrapper>();
+        Map<Problem_SU__c, Opportunity> mapaProblemaOportunidad=new map<Problem_SU__c, Opportunity>();
+        for(oportunidadWrapper i:oportunidadVisual){ // En este for vamos a corroborar que no haya errores en los datos con algunas restricciones de negocio
+            System.debug('i.problema.Care_Plan_Template_Problem_SU__c'+i.problema.Care_Plan_Template_Problem_SU__c);
+            if(i.problema.Care_Plan_Template_Problem_SU__c==null){
+                ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar una Cx o tratamiento a '+i.nombreTratamiento));
+                if(i.problema.Care_Plan_Template_Problem_SU__c==''){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar una Cx o tratamiento a '+i.nombreTratamiento));
+                    return null;
+                }
+                return null;
+            }
+            if(i.problema.Care_Plan_Template_Problem_SU__c==idAnteojos||i.problema.Care_Plan_Template_Problem_SU__c==idMicas){
+                if(i.problema.Micas_Tratamiento__c=='Ninguno'){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tratamiento a las micas en '+i.nombreTratamiento));
+                    return null;
+                }else if(i.problema.Micas_Diseno__c=='Ninguno'){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar diseño a las micas en '+i.nombreTratamiento));
+                    return null;
+                }else if(i.problema.Micas_Material__c=='Ninguno'){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar material a las micas en '+i.nombreTratamiento));
+                    return null;
+                }
+
+
+            }else if(i.problema.Care_Plan_Template_Problem_SU__c==idLentesDeContacto){
+                if(i.problema.Tipo_de_lente_de_contacto__c=='Ninguno'){
+                    ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tipo de lente de contacto en '+i.nombreTratamiento));
+                    return null;
+                }else if(i.problema.Tipo_de_lente_de_contacto__c=='Blandos'){
+                    if(i.problema.Tipo_de_Lente_de_Contacto_Blando__c=='Ninguno'){
+                        ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tipo de lente de contacto blando en '+i.nombreTratamiento));
+                        return null;
+                    }else if(i.problema.Tipo_de_Lente_de_Contacto_Blando__c=='Anuales'){
+                        if(i.problema.Lente_contacto_Blando_Anual__c=='Ninguno'){
+                            ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tipo de lente de contacto blando Anual en '+i.nombreTratamiento));
+                            return null;
+                        }
+                    }else if(i.problema.Tipo_de_Lente_de_Contacto_Blando__c=='Desechables'){
+                        if(i.problema.Lente_contacto_Blando_Desechables__c=='Ninguno'){
+                            ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tipo de lente de contacto blando Desechable en '+i.nombreTratamiento));
+                            return null;
+                        }
+                    }
+                }else if(i.problema.Tipo_de_lente_de_contacto__c=='Rígidos'){
+                    if(i.problema.Lente_contacto_Rigidos__c=='Ninguno'){
+                        ApexPages.addMessage(new ApexPages.message(ApexPages.severity.FATAL,'Debe agregar un tipo de lente de contacto Rígido en '+i.nombreTratamiento));
+                        return null;
+                    }
+
+                }
+            }
+            if(i.problema.Care_Plan_Template_Problem_SU__c!=idAnteojos&&i.problema.Care_Plan_Template_Problem_SU__c!=idMicas){
+                i.problema.Fecha_entrega_de_lentes__c=null;
+                System.debug('fue anteojos o micas');
+            }
+            i.problema.Paciente__c=etapa.Paciente__c;
+            problemasAgregar.add(i.problema);
+            problemaOportunidadWrapper POW = new problemaOportunidadWrapper(i.problema, i.oportunidad);
+            listaPOW.add(POW);
+            mapaProblemaOportunidad.put(i.problema, i.oportunidad);
+        }
+        //  System.debug('mapaProblemaOportunidad1'+mapaProblemaOportunidad);
+        System.debug('listaPOW1 '+listaPOW);
+        upsert problemasAgregar;
+        System.debug('problemasAgregar'+problemasAgregar);
+        // System.debug('mapaProblemaOportunidad'+mapaProblemaOportunidad);
+        System.debug('listaPOW2 '+listaPOW);
+        for(problemaOportunidadWrapper i:listaPOW){
+            Opportunity oppi=new opportunity();
+            oppi=i.oportunidad;
+            oppi.Problem_SU__c=i.problema.id;
+            oportunidadesActualizar.add(oppi);
+        }
+
+        /* set<Problem_SU__c> llaveMapa=new set<Problem_SU__c>();
+llaveMapa=mapaProblemaOportunidad.keySet();
+System.debug('llaveMapa '+llaveMapa);
+for(Problem_SU__c i:llaveMapa){
+System.debug('i . llave mapa '+i);
+Opportunity oppi=new opportunity();
+System.debug('mapaProblemaOportunidad.get(i)'+mapaProblemaOportunidad.get(i));
+oppi=mapaProblemaOportunidad.get(i);
+oppi.Problem_SU__c=i.id;
+oportunidadesActualizar.add(oppi);
+}*/
+        System.debug('oportunidadesActualizar'+oportunidadesActualizar);
+        update oportunidadesActualizar;
+        //MIKE
+        // if(false){
+        //oEPaciente=new Etapa_Paciente__c();
+        lEtapasDos= new list<string>();
+        oEPacienteDos=etapa;
+
+
+
+        if(oEPacienteDos.Etapas_Obligadas__c != null) lEtapasDos.addall(oEPacienteDos.Etapas_Obligadas__c.split(';'));
+
+        // <<< Valida si existe registro, si no lo crea
+        // Dependiendo el formulario
+        /* if(oEPaciente.Etapa__c == 'Examinación' || oEPaciente.Etapa__c == 'Refracción' || oEPaciente.Etapa__c == 'Preparación'){
+objConsulta.Paciente__c           = oEPaciente.Paciente__c;
+Campos_de_Guardado__c GuardaCampo = Campos_de_Guardado__c.getInstance(oEPaciente.Etapa__c);
+LlenarDatos(objConsulta,GuardaCampo.Campos__c,oEPaciente.Personal__c);
+if(objConsulta.Id == null){
+insert objConsulta;
+}else{
+update objConsulta;
+}
+}*/
+        // Valida si existe registro, si no lo crea >>>
+
+        // << Genera Bitacora
+        oEPacienteDos.Stamp_Fin_Atencion__c = datetime.now();
+        oEPacienteDos.Estatus__c            = 'Atendido';
+        update oEPacienteDos;
+        for(Bitacora_Personal__c oB:[SELECT Id,Estado__c FROM Bitacora_Personal__c WHERE Personal__c=:oEPacienteDos.Personal__c AND Fecha_Login__c = TODAY limit 1]){
+            oB.Estado__c = 'Libre';
+            update oB;
+        }
+        // Genera Bitacora >>>
+        System.debug('CONTINUAR ES'+continuarDos());
+        return continuarDos();
+
+        PageReference PagewId = new PageReference('/apex/PuentePag?IdEtapa='+oEPacienteDos.Id);
+        PagewId.setRedirect(true);
+        System.debug('PagewId mayusculas'+PagewId);
+        return PagewId;
+        //}  return null;
+    }
+    public PageReference ContinuarDos(){
+        set<string> sEtapas = new set<string>();
+        // genera url de redireccion a Lista de espera
+        PageReference PagewId = new PageReference('/apex/ListaesperaPag?Id='+oEPacienteDos.Personal__c);
+        PagewId.getParameters().put('Clinica',oEPacienteDos.Clinica__r.Name);
+        PagewId.getParameters().put('Consultorio',oEPacienteDos.Consultorio__c);
+        PagewId.setRedirect(true);
+
+
+
+        // Hereda solo las etapas precedentes de la configuracion por que no existen etapas que heredar de Etapas Pacientes
+        if(!lEtapasDos.isEmpty()){
+            for(Configuracion_Flujo__c oC:[SELECT Id,Puestos__c,Etapa__c, Etapas_Precedentes__c,Especialidad__c
+                                           FROM Configuracion_Flujo__c
+                                           WHERE Servicio__c = :oEPacienteDos.Flujo__c
+                                           AND Etapa__c = :lEtapasDos.get(0)]){
+
+                                               Etapa_Paciente__c oEP      = new Etapa_Paciente__c();
+                                               oEP.Visita__c              = oEPacienteDos.Visita__c;
+                                               oEP.Clinica__c             = oEPacienteDos.Clinica__c;
+                                               oEP.Flujo__c               = oEPacienteDos.Flujo__c;
+                                               oEP.Configuracion_Flujo__c = oC.Id;
+                                               oEP.Estatus__c             = 'En Espera';
+                                               oEP.Etapa__c               = oC.Etapa__c;
+                                               oEP.Puestos__c             = oC.Puestos__c;
+                                               oEP.Paciente__c            = oEPacienteDos.Paciente__c;
+                                               oEP.Especialidad__c        = oC.Especialidad__c;
+                                               oEP.Stamp_Llegada__c       = Datetime.now();
+                                               oEP.Hora_LLegada__c        = oEP.Stamp_Llegada__c.format('hh:mm a');
+
+
+
+                                               // Si esta en examinacion ir a plan de Salud
+                                               /*if(oEPacienteDos.Etapa__c == 'Examinación'){
+PagewId = new PageReference('/apex/EHR_PlanTratamiento');
+PagewId.getParameters().put('IdEtapa',idEtapa_ctr);
+PagewId.setRedirect(true);
+} */
+
+                                               oEP.Etapas_Obligadas__c = oC.Etapas_Precedentes__c;
+
+                                               System.debug('1. oEP.Etapas_Obligadas__c: ' + oEP.Etapas_Obligadas__c);
+                                               integer iPx=[SELECT Id
+                                                            FROM Etapa_Paciente__c
+                                                            WHERE Estatus__c = 'En Espera'
+                                                            AND Clinica__c       = :oEP.Clinica__c
+                                                            AND Etapa__c         = :oEP.Etapa__c
+                                                            AND Stamp_Llegada__c = TODAY].size();
+
+                                               system.debug('iPx: '+iPx);
+                                               if(iPx == 0){
+                                                   oEP.Primero_en_Fila__c = true;
+                                               }
+
+                                               lEtapasDos.remove(0);
+                                               for(string sEh: lEtapasDos){
+                                                   if(oEP.Etapas_Obligadas__c == '' || oEP.Etapas_Obligadas__c == null){
+                                                       oEP.Etapas_Obligadas__c = sEh;
+                                                   }else{
+                                                       if(!oEP.Etapas_Obligadas__c.contains(sEh.deleteWhitespace())) {
+                                                           oEP.Etapas_Obligadas__c += ';'+sEh;
+                                                       }
+                                                   }
+                                               }
+                                               insert oEP;
+                                               system.debug('lEtapasDos: '+lEtapasDos);
+                                               return PagewId;
+                                           }
+        }
+
+        // Finaliza el Flujo de los pacientes
+        Etapa_Paciente__c oEP        = new Etapa_Paciente__c();
+        oEP.Visita__c                = oEPacienteDos.Visita__c;
+        oEP.Clinica__c               = oEPacienteDos.Clinica__c;
+        oEP.Flujo__c                 = oEPacienteDos.Flujo__c;
+        oEP.Personal__c              = oEPacienteDos.Personal__c;
+        oEP.Estatus__c               = 'Fin';
+        oEP.Etapa__c                 = 'Finalizado';
+        oEP.Paciente__c              = oEPacienteDos.Paciente__c;
+        oEP.Stamp_Llegada__c         = Datetime.now();
+        oEP.Hora_LLegada__c          = oEP.Stamp_Llegada__c.format('hh:mm a');
+        oEP.Stamp_Inicio_Atencion__c = Datetime.now();
+        oEP.Stamp_Fin_Atencion__c    = Datetime.now();
+        oEP.Consultorio__c           = oEPacienteDos.Consultorio__c;
+        insert oEP;
+        system.debug('Finalizado: ');
+        return PagewId;
+    }
+}

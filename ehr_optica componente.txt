@@ -1,0 +1,884 @@
+<apex:component controller="OpticaController"  allowDML="true" >
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+        <apex:includeScript value="/support/console/22.0/integration.js"/>
+        <article class="slds-card fondo-verde-obscuro">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                    <div class="slds-media__body slds-truncate">
+                        <h2>
+                            <span class="slds-text-heading--small font-amarillo">Optica : {!etapa.Flujo__r.Name}</span>
+                        </h2>
+                    </div>
+                </header>
+                <div class="slds-no-flex">
+                    <apex:commandButton value="Agregar Estimación" status="statuslistas"  id="GeneraEstimacion"
+                                        styleclass="slds-button slds-button--neutral" action="{!generaEstimacionOptica}" reRender="panelUno,panelDos" />
+                    <apex:commandButton value="Guardar" status="statuslistas"  id="BOTONGUARDARHOY"
+                                        styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!GuardarConsejeriaSave}"/>
+                    <apex:commandButton value="Abandono" styleclass="slds-button slds-button--neutral" action="{!AbandonoConsejeria}" immediate="true" status="status" reRender="TratamientoTablaModalRepeat"/>
+                </div>
+            </div>
+
+            <div class="slds-card__body slds-theme--default slds-size--1-of-1 ">
+                <div id="FormEdicion" class="slds-form--compound slds-grid slds-grid--vertical slds-nowrap slds-is-editing slds-text-body--regular slds-scrollable" style="height: 450px">
+                    <fieldset id="Diagnostico" class="slds-form--compound">
+                        <div class="slds-form-element__group slds-text-color--default">
+                            <div class="slds-form-element__row">
+                                <div class="slds-size--1-of-2">
+                                    <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 270px">
+                                        <h3 class="slds-section-title--divider">Información del Paciente</h3>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Nombre:</span>
+                                                <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.Name} "/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-2 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Teléfono:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.Phone}"/></strong>
+                                          </div>
+                                          <div class="slds-form-element slds-size--1-of-2 slds-has-divider--bottom">
+                                            <label class="slds-form-element__label" for="input-02">Celular:</label>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.PersonMobilePhone}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Correo Electrónico:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!Paciente.PersonEmail}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row">
+                                          <div class="slds-form-element slds-size--1-of-1 slds-has-divider--bottom">
+                                            <span class="slds-form-element__label">Dirección:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small">{!Paciente.BillingStreet} {!Paciente.N_mero_exterior_de_facturaci_n__c} {!Paciente.Numero_interior__c}, {!Paciente.Colonia_de_facturaci_n__c}, {!Paciente.BillingState}, {!Paciente.BillingCountry} {!Paciente.BillingCity}, {!Paciente.BillingPostalCode}</strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row slds-text-align--center">
+                                          <div class="slds-form-element slds-size--1-of-3">
+                                            <apex:commandButton styleClass="slds-button slds-button--brand fondo-verde-claro"
+                                                                value="Plan de Salud" style="font-size: 8pt;"
+                                                                onclick="sforce.one.navigateToSObject('{!planSalud.id}');"/>
+                                             <apex:commandButton styleClass="slds-button slds-button--brand fondo-verde-claro"
+                                                                value="Consulta" style="font-size: 8pt;"
+                                                                onclick="sforce.one.navigateToSObject('{!consulta.id}');"/>
+                                             <apex:commandLink onclick="abreNuevaVentana();" value="Imprimir Graduación " style="font-size: 8pt;"
+                                                                styleClass="slds-button slds-button--brand fondo-verde-claro"/>
+                                          </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-size--1-of-2">
+                                    <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 270px">
+                                        <h3 class="slds-section-title--divider">Información de Consulta </h3>
+                                        <div class="slds-form-element__row slds-has-divider--bottom">
+                                          <div class="slds-form-element slds-size--1-of-1">
+                                            <span class="slds-form-element__label">Motivo de Consulta:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Motivo_de_consulta__c}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__row slds-has-divider--bottom">
+                                          <div class="slds-form-element slds-size--1-of-1">
+                                            <span class="slds-form-element__label">Motivo de Consulta Medico:</span>
+                                            <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Motivo_de_consulta_Medico__c}"/></strong>
+                                          </div>
+                                        </div>
+                                        <div class="slds-form-element__group slds-text-align--center">
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element font-verde-claro">
+                                                    Ojo Derecho
+                                                </div>
+                                                <div class="slds-form-element ">
+                                                    <span class="slds-text-title"></span>
+                                                </div>
+                                                <div class="slds-form-element font-verde-claro">
+                                                    Ojo Izquierdo
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Esfera_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Esfera</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Esfera_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Cilindro_OD_Ref__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Cilindro</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Cilindro_OI_Ref__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Eje_OD_Ref__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Eje</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Eje_OI_Ref__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Capacidad_visual_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">C.V. Cercana</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Capacidad_visual_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Agudeza_visual_Lejana_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">A.V. Lejana</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Agudeza_visual_Lejana_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element__row slds-has-divider--bottom">
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Diagnostico_refractivo_OD__c}"/></strong>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <span class="slds-form-element__label">Diagnostico Refractivo</span>
+                                                </div>
+                                                <div class="slds-form-element slds-size--1-of-3">
+                                                    <strong class="slds-form-element__static slds-text-body--small"><apex:outputField value="{!consulta.Diagnostico_refractivo_OI__c}"/></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element__row">
+                                <div class="slds-size--2-of-2">
+                                  <div class="slds-box slds-box--x-small slds-scrollable--y" style="height: 180px">
+                                    <div id="DIag" class="slds-show">
+                                        <table class="slds-table slds-table--bordered slds-table--cell-buffer slds-table--col-bordered slds-no-row-hover">
+                                          <thead>
+                                            <tr class="slds-text-title--caps slds-theme--shade">
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Urgente">Urg.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Fecha de Creacion">Fecha Crea.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Tratamiento">Tratamiento</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Tipo Cirugia">Tipo Trata.</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Optometrista">Optometrista</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Información">Información</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Ver Detalles">Detalles</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Ver Estimacion">Estimación</div>
+                                              </th>
+                                              <th scope="col">
+                                                <div class="slds-truncate" title="Importe">Importe</div>
+                                              </th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <apex:repeat value="{!oportunidadVisual}" var="opp" id="TratamientoTablaRepeat" >
+                                                <tr class="{!opp.colorFondo}">
+                                                  <th scope="row" data-label="Urgente">
+                                                    <div class="slds-truncate" title="Urgente"><apex:outputField value="{!opp.tratamiento.Urgente__c}" /></div>
+                                                  </th>
+                                                  <td data-label="Fecha de Creacion">
+                                                    <div class="slds-truncate" title="Fecha de Creacion"><apex:outputText value="{!opp.fechaCreacionD} " /></div>
+                                                  </td>
+                                                  <td data-label="Tratamiento">
+                                                    <div class="slds-truncate" title="Tratamiento"><apex:outputText value="{!opp.nombreTratamiento} - {!opp.ojo} " /></div>
+                                                  </td>
+                                                  <td data-label="Tipo Tratamiento">
+                                                    <div class="slds-truncate" title="Tipo Tratamiento">
+                                                        <apex:outputPanel id="myRowDos" >
+                                                            <apex:outputText value="{!opp.nombreProblema}"  />
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Propietario de estimación">
+                                                    <div class="slds-truncate" title="Propietario de Estimacion">
+                                                        <apex:outputText value="{!opp.propietarioEstimacion}" />
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Informacion">
+                                                    <div class="slds-truncate" title="Informacion">
+                                                        <apex:outputField value="{!opp.oportunidad.Probability}" /> <br/> <apex:outputField value="{!opp.oportunidad.RecordType.Name}" /> <br/> <apex:outputField value="{!opp.oportunidad.StageName}" />
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Detaller">
+                                                    <div class="slds-truncate" title="Detalles">
+                                                        <apex:commandButton styleClass="slds-m-top--xx-small slds-button slds-button--neutral " id="BotonMasInformacion" status="statuslistas" style=" font-size: 10px;" reRender="TratamientoTablaRepeat" immediate="true" value="Detalles" onclick="abreModalMasInformacion('{!opp.numeroContador}','{!opp.nombreTratamiento}','{!opp.ojo}');" >
+                                                        </apex:commandButton>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Estimacion">
+                                                    <div class="slds-truncate" title="Estimacion">
+                                                        <apex:commandButton styleClass="slds-m-top--xx-small slds-button slds-button--neutral " value="{!opp.oportunidad.Name}" style="font-size: 8pt" onclick="sforce.one.navigateToSObject('{!opp.identificadorEstimacion}');"/>
+                                                    </div>
+                                                  </td>
+                                                  <td data-label="Importe">
+                                                    <div class="slds-truncate" title="Importe">
+                                                        <apex:outputField value="{!opp.oportunidad.Amount }" style="width:400px; height:50px;"/>
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                            </apex:repeat>
+                                           </tbody>
+                                        </table>
+                                    </div>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <!-- Aqui inicia modal-->
+                    <div class="facetCargandoStatusListo">
+                        <div class="slds-hide" id="ModalMasInformacion" >
+                            <div role="dialog" tabindex="-1" aria-labelledby="header53" class="slds-modal slds-fade-in-open ">
+                                <div class="slds-modal__container">
+                                    <div class="slds-modal__header fondo-verde-obscuro">
+                                        <span class="slds-assistive-text">Close</span>
+
+                                        <h2 id="header53" class="font-amarillo slds-section__title"><font id="TituloCabecera"></font></h2>
+                                    </div>
+                                    <div class="slds-modal__content slds-p-around--medium primero" >
+                                        <apex:outputPanel id="panelDos">
+                                        <ul >
+                                            <apex:repeat value="{!oportunidadVisual}" var="opp" id="TratamientoTablaModalRepeat" >
+                                                <li class="slds-item slds-text-color--default" >
+                                                    <div class="slds-form-element__group slds-form--compound slds-text-align--center">
+                                                        <div class="slds-form-element__row ">
+                                                            <div class="slds-form-element slds-m-bottom--small slds-hide {!opp.numeroContador}">
+                                                                <h3 class="slds-section-title--divider">Anotaciones Medicas</h3>
+                                                                <span class="slds-text-title slds-text-color--default">
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Optometrista o Dr. que creo</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Creado_x__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Optometrista o Dr. que autorizo</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Autorizado_por__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Optometrista</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputText value="{!opp.propietarioEstimacion}" /></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">Nota Optometrista</label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong><apex:outputField value="{!opp.tratamiento.Nota__c} "/></strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Optica</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2">
+                                                                            <label class="slds-form-element__label">
+                                                                                Tipo de Tratamiento
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select lenteContactoMica lenteContactoMicaNumero{!opp.numeroContador}"  value="{!opp.problema.Care_Plan_Template_Problem_SU__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!opp.opcionesCx}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide lenteContacto{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Tipo de lente de contacto
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select tipoLentesContacto{!opp.numeroContador} tipoLentesContactoOpcionLista"  value="{!opp.problema.Tipo_de_lente_de_contacto__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!tipoLenteContacto}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide tratmiento{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Tratamiento
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select tratmientoValue{!opp.numeroContador}"  value="{!opp.problema.Micas_Tratamiento__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!tratamiento}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide tipoLenteblando{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Tipo de Lente de Contacto Blando
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select blandoValueTipo{!opp.numeroContador} blandoValueTipoOpcionLista" value="{!opp.problema.Tipo_de_Lente_de_Contacto_Blando__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!tipoBlando}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide blando{!opp.numeroContador} Anuales{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Anuales
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select blandoValueDos{!opp.numeroContador}"  value="{!opp.problema.Lente_contacto_Blando_Anual__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!blandoAnual}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide blando{!opp.numeroContador} Desechables{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Desechables
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select blandoValueUno{!opp.numeroContador}"  value="{!opp.problema.Lente_contacto_Blando_Desechables__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!blandoDesechable}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide rigidos{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Rigidos
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select rigidoValueUno{!opp.numeroContador}"  value="{!opp.problema.Lente_contacto_Rigidos__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!rigido}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide diseno{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Diseño
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select disenoValue{!opp.numeroContador}"  value="{!opp.problema.Micas_Diseno__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!diseno}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-2 slds-hide material{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">
+                                                                                Material
+                                                                            </label>
+                                                                            <div class="slds-form-element">
+                                                                                <strong>
+                                                                                    <apex:selectList styleClass="slds-select materialValue{!opp.numeroContador}"  value="{!opp.problema.Micas_Material__c}"  multiselect="false" size="1" style="width:200px;"  tabindex="0" >
+                                                                                        <apex:selectOptions value="{!material}"/>
+                                                                                    </apex:selectList>
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Anticipo $</label>
+                                                                            <div class="slds-form-element__control">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-input" style="width:200px;" value="{!opp.problema.Anticipo_de_lentes__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="slds-form-element slds-size--1-of-3 slds-hide Mica{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">Folio de producción de micas</label>
+                                                                            <div class="slds-form-element__control">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-input" style="width:200px;" value="{!opp.problema.Folio_TNT__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+
+                                                                        <div class="slds-form-element slds-size--3-of-5 slds-hide Mica{!opp.numeroContador}">
+                                                                            <label class="slds-form-element__label">Fecha Entrega de Lentes</label>
+                                                                            <div class="slds-form-element__control">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-input" style="width:250px;" value="{!opp.problema.Fecha_entrega_de_lentes__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div class="slds-form-element__row ">
+                                                                        <div class="slds-form-element slds-size--1-of-3">
+                                                                            <label class="slds-form-element__label">Observaciones de Optica</label>
+                                                                            <div class="slds-form-element__control">
+                                                                                <strong>
+                                                                                    <apex:inputField styleClass="slds-input" style="width:330px; height:75px;" value="{!opp.problema.Observaciones_Optica__c}" />
+                                                                                </strong>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <div class="slds-form-element">
+                                                                                <apex:commandButton styleClass="slds-button slds-button--neutral fondo-verde-claro" value="Agendar Cita" onclick="sforce.one.navigateToURL('{!URLLINK}');"/>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Información de Estimación</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row">
+                                                                        <div class="slds-size--1-of-2">
+                                                                            <table class="slds-table slds-table--bordered slds-table--cell-buffer slds-table--col-bordered slds-no-row-hover">
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Importe">Importe</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowSubtotal" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.Ok_Subtotal_Importe__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Descuentos">Descuentos</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowDescuentos" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.ok_SubtotalDescuentos__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Producto">Producto</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowProducto" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.SubTotalProducto__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="Sub-Total Impuestos">Impuestos</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowImps" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.SubTotalImpuestos__c}"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                                <tr class="slds-text-title">
+                                                                                  <th scope="col">
+                                                                                    <div class="slds-truncate" title="TOTAL">TOTAL</div>
+                                                                                  </th>
+                                                                                  <td class="slds-text-align--right">
+                                                                                    <apex:outputPanel id="myRowAmount" >
+                                                                                        <apex:outputField value="{!opp.oportunidad.Amount }"/>
+                                                                                    </apex:outputPanel>
+                                                                                  </td>
+                                                                                </tr>
+                                                                            </table>
+                                                                        </div>
+                                                                        <div class="slds-size--1-of-2">
+                                                                            <apex:commandButton value="Actualizar Información" status="statuslistas" reRender="{!$Component.TratamientoTablaModalRepeat.myRowSubtotal},{!$Component.TratamientoTablaModalRepeat.myRowDescuentos},{!$Component.TratamientoTablaModalRepeat.myRowProducto},{!$Component.TratamientoTablaModalRepeat.myRowImps},{!$Component.TratamientoTablaModalRepeat.myRowAmount}"
+                                                                                                styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!funcionActualizaEstimacion}"
+                                                                                                />
+                                                                            <br/><br/>
+                                                                            <apex:commandButton styleClass="slds-button slds-button--neutral fondo-verde-claro" value="Abrir Estimación" onclick="sforce.one.navigateToSObject('{!opp.identificadorEstimacion}');"/>
+                                                                        </div>
+                                                                    </div>
+
+
+
+
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <h3 class="slds-section-title--divider">Material de apoyo</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="slds-form-element__row slds-m-top--medium">
+                                                                        <div class="slds-form-element slds-size--1-of-1">
+                                                                            <ul class="slds-list--horizontal slds-has-dividers--left slds-has-block-links--space slds-wrap">
+                                                                                <li class="slds-item"><a href="http://www.salauno.com.mx/opticas-df-sala-uno.html" target="_blank" title="Óptica">Óptica</a></li>
+                                                                            </ul>
+                                                                        </div>
+                                                                    </div>
+                                                                </span>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </apex:repeat>
+                                        </ul>
+                                        </apex:outputPanel>
+
+                                    </div>
+                                    <div class="slds-modal__footer fondo-verde-obscuro primero">
+                                        <apex:commandButton value="Actualizar" status="statuslistas" reRender="{!$Component.TratamientoTablaRepeat.myRowDos}"
+                                                            styleclass="slds-button slds-button--neutral fondo-amarillo" action="{!funcionGenial}"
+                                                            onclick="CierraModales();" />
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="slds-backdrop slds-backdrop--open"></div>
+                        </div>
+                    </div><!--AQUI TERMINA MODAL DE AGREGAR TRATAMIENTO-->
+                </div>
+            </div>
+            <apex:outputPanel id="elaboraEstimacionOptica">
+              <apex:actionFunction reRender="elaboraEstimacionOptica,panelUno,panelDos" name="AgregaEstimacion"
+                                     action="{!generaEstimacionOptica}" rendered="{!yaSeElaboroEnFlujoEstimacion}" />
+            </apex:outputPanel>
+            <apex:actionFunction name="ActualizaOportunidades" action="{!actualizaOportunidades}" reRender="{!$Component.TratamientoTablaRepeat.myRowDos}" />
+            <script type="text/javascript">
+
+            $('.lenteContactoMica').change(function(event){
+                console.log("se movio");
+                console.log("Seleccionado"+$('.lenteContactoMica option:selected').val());
+                console.log($(this).hasClass("lenteContactoMicaNumero1"));
+                var i=0;
+                for (i ; i < 10; i++) {
+                    console.log("i="+i)
+                    if($(this).hasClass("lenteContactoMicaNumero"+i)){
+                        console.log("ya encontre el lente contacto mica"+i);
+                        break;
+                        }
+                    }
+                //console.log("i despues es "+i);
+                var idMica="{!idMicas}";
+                var idLenteContacto="{!idLentesDeContacto}";
+                var idAnteojos="{!idAnteojos}";
+                // console.log("mica"+idMica);
+                // console.log("no  "+idLenteContacto);
+                if($('option:selected',this).val() == idMica||$('option:selected',this).val() == idAnteojos){
+                    console.log("Selecciono mica");
+                    $(".Mica"+i).addClass("slds-show");
+                    $(".Mica"+i).removeClass("slds-hide");
+                    $(".lenteContacto"+i).removeClass("slds-show");
+                    $(".lenteContacto"+i).addClass("slds-hide");
+                    $(".diseno"+i).addClass("slds-show");
+                    $(".diseno"+i).removeClass("slds-hide");
+                    $(".material"+i).addClass("slds-show");
+                    $(".material"+i).removeClass("slds-hide");
+                    $(".tratmiento"+i).addClass("slds-show");
+                    $(".tratmiento"+i).removeClass("slds-hide");
+                    $(".blando"+i).removeClass("slds-show");
+                    $(".blando"+i).addClass("slds-hide");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+                    $(".tipoLentesContacto"+i).val("Ninguno");
+                    $(".tratmientoValue"+i).val("Ninguno");
+                    $(".disenoValue"+i).val("Ninguno");
+                    $(".materialValue"+i).val("Ninguno");
+                    $(".tipoLenteblando"+i).addClass("slds-hide");
+                    $(".tipoLenteblando"+i).removeClass("slds-show");
+                    $(".blandoValueTipo"+i).val("Ninguno");
+
+                } else if($('option:selected',this).val() == idLenteContacto) {
+                    $(".Mica"+i).addClass("slds-hide");
+                    $(".Mica"+i).removeClass("slds-show");
+                    $(".lenteContacto"+i).removeClass("slds-hide");
+                    $(".lenteContacto"+i).addClass("slds-show");
+                    $(".diseno"+i).removeClass("slds-show");
+                    $(".diseno"+i).addClass("slds-hide");
+                    $(".material"+i).removeClass("slds-show");
+                    $(".material"+i).addClass("slds-hide");
+                    $(".tratmiento"+i).removeClass("slds-show");
+                    $(".tratmiento"+i).addClass("slds-hide");
+                    $(".blando"+i).removeClass("slds-show");
+                    $(".blando"+i).addClass("slds-hide");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+                    $(".tipoLentesContacto"+i).val("Ninguno");
+                    $(".tratmientoValue"+i).val("Ninguno");
+                    $(".disenoValue"+i).val("Ninguno");
+                    $(".materialValue"+i).val("Ninguno");
+                    $(".tipoLenteblando"+i).addClass("slds-hide");
+                    $(".tipoLenteblando"+i).removeClass("slds-show");
+                    $(".blandoValueTipo"+i).val("Ninguno");
+                    console.log("Selecciono lente");
+                }else{
+                    $(".Mica"+i).addClass("slds-hide");
+                    $(".Mica"+i).removeClass("slds-show");
+                    $(".lenteContacto"+i).addClass("slds-hide");
+                    $(".lenteContacto"+i).removeClass("slds-show");
+                    $(".diseno"+i).removeClass("slds-show");
+                    $(".diseno"+i).addClass("slds-hide");
+                    $(".material"+i).removeClass("slds-show");
+                    $(".material"+i).addClass("slds-hide");
+                    $(".tratmiento"+i).removeClass("slds-show");
+                    $(".tratmiento"+i).addClass("slds-hide");
+                    $(".blando"+i).removeClass("slds-show");
+                    $(".blando"+i).addClass("slds-hide");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+                    $(".tipoLentesContacto"+i).val("Ninguno");
+                    $(".tratmientoValue"+i).val("Ninguno");
+                    $(".disenoValue"+i).val("Ninguno");
+                    $(".materialValue"+i).val("Ninguno");
+                    $(".tipoLenteblando"+i).addClass("slds-hide");
+                    $(".tipoLenteblando"+i).removeClass("slds-show");
+                    $(".blandoValueTipo"+i).val("Ninguno");
+                }
+            });
+
+            $('.tipoLentesContactoOpcionLista').change(function(event){
+                console.log("se movio");
+                console.log($('option:selected', this).val());
+                console.log($(this).hasClass());
+        var i=0;
+        for (i ; i < 10; i++) {
+                    console.log("i="+i)
+                    if($(this).hasClass("tipoLentesContacto"+i)){
+                        console.log("tipoLentesContacto"+i);
+                        break;
+                        }
+                    }
+                if($('option:selected',this).val() == 'Blandos'){
+                    $(".tipoLenteblando"+i).removeClass("slds-hide");
+                    $(".tipoLenteblando"+i).addClass("slds-show");
+                    $(".blandoValueTipo"+i).val("Ninguno");
+                    $(".blando"+i).addClass("slds-hide");
+                    $(".blando"+i).removeClass("slds-show");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+                } else {
+                    $(".tipoLenteblando"+i).addClass("slds-hide");
+                    $(".tipoLenteblando"+i).removeClass("slds-show");
+                    $(".blandoValueTipo"+i).val("Ninguno");
+                    $(".blando"+i).addClass("slds-hide");
+                    $(".blando"+i).removeClass("slds-show");
+                    $(".rigidos"+i).removeClass("slds-hide");
+                    $(".rigidos"+i).addClass("slds-show");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+                }
+            });
+            $('.blandoValueTipoOpcionLista').change(function(event){
+      var i=0;
+      for (i ; i < 10; i++) {
+                    console.log("i="+i)
+                    if($(this).hasClass("blandoValueTipo"+i)){
+                        console.log("blandoValueTipoa"+i);
+                        break;
+                        }
+                    }
+                console.log("se movio");
+                console.log($('option:selected',this).val());
+                if($('option:selected',this).val() == 'Anuales'){
+                    $(".Anuales"+i).addClass("slds-show");
+                    $(".Anuales"+i).removeClass("slds-hide");
+                    $(".Desechables"+i).removeClass("slds-show");
+                    $(".Desechables"+i).addClass("slds-hide");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+
+                }else{
+                    $(".Anuales"+i).removeClass("slds-show");
+                    $(".Anuales"+i).addClass("slds-hide");
+                    $(".Desechables"+i).addClass("slds-show");
+                    $(".Desechables"+i).removeClass("slds-hide");
+                    $(".rigidos"+i).removeClass("slds-show");
+                    $(".rigidos"+i).addClass("slds-hide");
+                    $(".blandoValueUno"+i).val("Ninguno");
+                    $(".rigidoValueUno"+i).val("Ninguno");
+                    $(".blandoValueDos"+i).val("Ninguno");
+
+                }
+            })
+
+            function CierraModales(){
+                $("#ModalMasInformacion").removeClass("slds-show");
+                $("#ModalMasInformacion").addClass("slds-hide");
+                for (i = 0; i < 10; i++) {
+
+                    $("."+i).removeClass("slds-show");
+                    $("."+i).addClass("slds-hide");
+                }
+
+            }
+
+            function agendaCita() {
+
+                //Open a new primary tab with the salesforce.com home page in it
+                sforce.console.openPrimaryTab(null, '{!URLLINK}', false,
+                                              'Agenda cita', openSuccess, 'AgendaCitaTab');
+            }
+
+            function testOpenPrimaryTab(a) {
+                console.log("a es "+a);
+                //Open a new primary tab with the salesforce.com home page in it
+                sforce.console.openPrimaryTab(null, a, false,
+                                              'Estimacion', openSuccess, 'estimacionTab');
+            }
+
+            var openSuccess = function openSuccess(result) {
+                //Report whether opening the new tab was successful
+                if (result.success == true) {
+                    //   alert('Primary tab successfully opened');
+                } else {
+                    // alert('Primary tab cannot be opened');
+                }
+            };
+            function abreModalMasInformacion(a,b,c){
+                console.log(a);
+                console.log(b);
+                $("#ModalMasInformacion").removeClass("slds-hide");
+                $("#ModalMasInformacion").addClass("slds-show");
+                $("#TituloCabecera").text(b+" - "+c);
+                $("."+a).removeClass("slds-hide");
+                $("."+a).addClass("slds-show");
+                 muestraCamposEnDetallesEstimacion(a);
+            }
+            $("#BotonCerrar").click(function(){
+                console.log('cerrar');
+                $("#ModalMasInformacion").removeClass("slds-show");
+                $("#ModalMasInformacion").addClass("slds-hide");
+                for (i = 0; i < 10; i++) {
+
+                    $("."+i).removeClass("slds-show");
+                    $("."+i).addClass("slds-hide");
+                }
+            })
+            function ocultaTodo(){
+                $(".facetCargandoStatusListo").removeClass("slds-show");
+                $(".facetCargandoStatusListo").addClass("slds-hide");
+            }
+            function muestraTodo(){
+                $(".facetCargandoStatusListo").addClass("slds-show");
+                $(".facetCargandoStatusListo").removeClass("slds-hide");
+            }
+
+            function abreNuevaVentana() {
+                window.open("{!URLHojaFrontal}");
+            }
+
+            // $(document).ready(function() {
+            function muestraCamposEnDetallesEstimacion(i){
+                var idMica="{!idMicas}";
+                var idLenteContacto="{!idLentesDeContacto}";
+                var idAnteojos="{!idAnteojos}";
+                console.log("idMica"+idMica);
+                console.log("idLenteContacto"+idLenteContacto);
+                console.log("idAnteojos"+idAnteojos);
+                console.log("se cargo la pagina");
+                // console.log("lenteContactoMicaNumero : "+$('.lenteContactoMicaNumero'+i+' option:selected').val());
+                //console.log("Condicion es = "+$('.lenteContactoMica'+i+' option:selected').val() == idAnteojos);
+                if($('.lenteContactoMicaNumero'+i+' option:selected').val() == idMica||$('.lenteContactoMicaNumero'+i+' option:selected').val() == idAnteojos){
+                    console.log("linea 1153");
+                    $(".Mica"+i).addClass("slds-show");
+                    $(".Mica"+i).removeClass("slds-hide");
+                    $(".diseno"+i).addClass("slds-show");
+                    $(".diseno"+i).removeClass("slds-hide");
+                    $(".material"+i).addClass("slds-show");
+                    $(".material"+i).removeClass("slds-hide");
+                    $(".tratmiento"+i).addClass("slds-show");
+                    $(".tratmiento"+i).removeClass("slds-hide");
+                } else if($('.lenteContactoMicaNumero'+i+' option:selected').val() == idLenteContacto) {
+                    $(".lenteContacto"+i).removeClass("slds-hide");
+                    $(".lenteContacto"+i).addClass("slds-show");
+                }
+
+                console.log("tipoLentesContacto"+i+$('.tipoLentesContacto'+i+' option:selected').val());
+                if($('.tipoLentesContacto'+i+' option:selected').val() == 'Blandos'){
+                    $(".tipoLenteblando"+i).removeClass("slds-hide");
+                    $(".tipoLenteblando"+i).addClass("slds-show");
+
+                }else if($('.tipoLentesContacto'+i+' option:selected').val() == 'Rígidos'){
+                    $(".rigidos"+i).removeClass("slds-hide");
+                    $(".rigidos"+i).addClass("slds-show");
+                }
+
+                if($('.blandoValueTipo'+i+' option:selected').val() == 'Anuales'){
+                    $(".Anuales"+i).addClass("slds-show");
+                    $(".Anuales"+i).removeClass("slds-hide");
+                }else if($('.blandoValueTipo'+i+' option:selected').val() == 'Desechables'){
+                    $(".Desechables"+i).addClass("slds-show");
+                    $(".Desechables"+i).removeClass("slds-hide");
+                }
+
+                // $(".tipoLentesContacto").prop("required","true");
+                // })
+            }
+            </script>
+
+        </article>
+    </html>
+</apex:component>

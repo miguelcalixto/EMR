@@ -1,0 +1,215 @@
+@isTest
+private class TestEHR_EditFormCtrl {
+
+    // Funcion Guardar(Examinacion)
+    static testMethod void TestEHR_EditFormCtrlExaminacion(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Examinación', true); // Paciente, Etapa, Con_Consulta
+
+        EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c=true,Fotomotor_OI__c=true);
+        EHR_Condition_SU__c objDiagnosticoTest = new EHR_Condition_SU__c();
+        EHR_Hallazgo_Template__c objHallazgoTplTest = new EHR_Hallazgo_Template__c();
+        EHR_Diagnosticos_Template__c objDiagnosticoTplTest = new EHR_Diagnosticos_Template__c();
+
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+                //cEF.nombrePX = 'Diego';
+                cEF.objConsulta       = objConsultaTest;
+                cEF.objDiagnostico    = objDiagnosticoTest;
+                cEF.objHallazgoTpl    = objHallazgoTplTest;
+                cEF.objDiagnosticoTpl = objDiagnosticoTplTest;
+                cEF.oEPaciente        = oEP;
+                cEF.GuardarHC();
+                cEF.Guardar();
+                //cEF.RegresarAFila();
+        Test.stopTest();
+    }
+
+    // Funcion SiguienteP(Examinacion)
+    static testMethod void TestEHR_EditFormCtrlsiguienteP(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Examinación', true); // Paciente, Etapa, Con_Consulta
+
+        EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c=true,Fotomotor_OI__c=true);
+        EHR_Condition_SU__c objDiagnosticoTest = new EHR_Condition_SU__c();
+        EHR_Hallazgo_Template__c objHallazgoTplTest = new EHR_Hallazgo_Template__c();
+        EHR_Diagnosticos_Template__c objDiagnosticoTplTest = new EHR_Diagnosticos_Template__c();
+
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+                //cEF.nombrePX = 'Diego';
+                cEF.objConsulta       = objConsultaTest;
+                cEF.objDiagnostico    = objDiagnosticoTest;
+                cEF.objHallazgoTpl    = objHallazgoTplTest;
+                cEF.objDiagnosticoTpl = objDiagnosticoTplTest;
+                cEF.oEPaciente        = oEP;
+                //cEF.GuardarHC();
+                //cEF.Guardar();
+                cEF.RegresarAFila();
+        Test.stopTest();
+    }
+
+
+    // Funcion Guardar(Preparacion)
+    static testMethod void TestEHR_EditFormCtrlPreparacion(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Preparación', true); // Paciente, Etapa, Con_Consulta
+        Plan_de_Salud__c planSalud = new Plan_de_Salud__c();
+        EHR_Care_Plan_SU__c carePlan = new EHR_Care_Plan_SU__c();
+    List<EHR_Care_Plan_Template_SU__c> tem=crearTemplate(1,'Óptica');
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+
+                EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Diagnostico_refractivo_OD__c='Ampliopia',Capacidad_visual_OD__c='20/25',Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis', Urgencia__c = true);
+                cEF.objConsulta = objConsultaTest;
+                cEF.oEPaciente  = oEP;
+                cEF.GuardarHC();
+                //cEF.Guardar();
+        Test.stopTest();
+    }
+ // Funcion Guardar(Refraccion)
+    static testMethod void TestEHR_EditFormCtrlRefraccion(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Preparación', true); // Paciente, Etapa, Con_Consulta
+    List<EHR_Care_Plan_Template_SU__c> tem=crearTemplate(1,'Óptica');
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+
+                EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Diagnostico_refractivo_OI__c='Ampliopia',Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis', Urgencia__c = true, Capacidad_visual_OI__c = '20/20');
+                cEF.objConsulta = objConsultaTest;
+                cEF.oEPaciente  = oEP;
+                cEF.GuardarHC();
+                cEF.RegresarEtapaAnterior();
+                //cEF.Guardar();
+        Test.stopTest();
+    }
+     // Funcion Guardar(RefraccionDiagnosticoRefractivo)
+    static testMethod void TestEHR_EditFormCtrlRefraccionDiagnosticoRefractivo(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Refracción', true); // Paciente, Etapa, Con_Consulta
+         List<EHR_Consulta__c> consul=[Select id from EHR_Consulta__c where Paciente__c=:oPX.id];
+        delete consul;
+        System.debug('consul'+consul);
+        EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis');
+        objConsultaTest.Paciente__c=oPX.id;
+        objConsultaTest.Capacidad_visual_OD__c = '20/20';
+        objConsultaTest.Capacidad_visual_OI__c = '20/20';
+        objConsultaTest.Diagnostico_refractivo_OD__c='Astigmatismo hipermetropico compuesto; Miopía';
+        insert objConsultaTest;
+        System.debug('Todas las consultas');
+
+    List<EHR_Care_Plan_Template_SU__c> tem=crearTemplate(1,'Óptica');
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Refraccion?IdEtapa='+oEP.Id;
+        cEF.objConsulta=objConsultaTest;
+                //EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Diagnostico_refractivo_OI__c='Ampliopia',Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis', Urgencia__c = true, Capacidad_visual_OI__c = '20/20');
+                //cEF.objConsulta = objConsultaTest;
+                cEF.oEPaciente  = oEP;
+                cEF.GuardarHC();
+                cEF.Guardar();
+        Test.stopTest();
+    }
+
+    //// Funcion Guardar(Cirugia)
+    //static testMethod void TestEHR_EditFormCtrlCirugia(){
+    //    Account oPX           = TestDataFormFlujos.setPaciente();
+    //    Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Cirugia', true); // Paciente, Etapa, Con_Consulta
+
+    //    Test.startTest();
+    //        EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+    //            cEF.setidPaciente_ctr(oPX.Id);
+    //            cEF.setidEtapa_ctr(oEP.Id);
+    //            cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+
+    //            EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis');
+    //            cEF.objConsulta = objConsultaTest;
+    //            cEF.oEPaciente  = oEP;
+    //            //cEF.GuardarHC();
+    //            //cEF.Guardar();
+    //    Test.stopTest();
+    //}
+
+    // Funcion Dilatacion()
+    static testMethod void TestEHR_EditFormCtrlDilatacion(){
+      px_parametros__c oCP = new px_parametros__c();
+      oCP.Secciones_Historia_Clinica__c = 'Antecedentes Familiares Patologicos; Estilo de Vida; Antecedentes Personales Patologicos;';
+        oCP.Id_Consulta_Oftalmologo__c = 'a1D360000009v8U';
+        oCP.ID_Reporte_Flujo_Clinica__c = '00O36000007CzKv';
+      oCP.Rango_de_tercera_edad__c = 30;
+      oCP.Tiempo_de_Espera__c = 10;
+      insert oCP;
+        Account oPX           = TestDataFormFlujos.setPaciente();
+//        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Examinación', true); // Paciente, Etapa, Con_Consulta
+      Personal__c oP = TestFunctions.crearPersonales(1).get(0);
+      Etapa_Paciente__c oEp = TestFunctions.crearEtapaPaciente(1,'Examinación').get(0);
+
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oP.Id);
+                cEF.setidEtapa_ctr(oEp.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+
+                EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis',Paciente__c=oPX.Id);
+                cEF.objConsulta = objConsultaTest;
+                cEF.oEPaciente  = oEp;
+                cEF.Dilatacion();
+        Test.stopTest();
+    }
+
+    // Funcion Abandono
+    static testMethod void TestEHR_EditFormCtrlAbandono(){
+        Account oPX           = TestDataFormFlujos.setPaciente();
+        Etapa_Paciente__c oEP = TestDataFormFlujos.setEtapaPaciente(oPX, 'Preparación', true); // Paciente, Etapa, Con_Consulta
+
+        Test.startTest();
+            EHR_EditFormCtrl cEF = new EHR_EditFormCtrl();
+                cEF.setidPaciente_ctr(oPX.Id);
+                cEF.setidEtapa_ctr(oEP.Id);
+                cEF.urlActual = 'https://salauno--dev6--c.cs26.visual.force.com/apex/EHR_Examinacion?IdEtapa='+oEP.Id;
+
+                EHR_Consulta__c objConsultaTest = new EHR_Consulta__c(Fotomotor_OD__c = true, Fotomotor_OI__c = true, Parpados_OD__c = 'Blefaritis');
+                cEF.objConsulta = objConsultaTest;
+                cEF.getidPaciente_ctr();
+                cEF.getidEtapa_ctr();
+                cEF.oEPaciente  = oEP;
+                cEF.Abandono();
+        Test.stopTest();
+    }
+     public static List<EHR_Care_Plan_Template_SU__c> crearTemplate(Integer iNumDeRegistros,String nombreUniversal){
+        List<EHR_Care_Plan_Template_SU__c> lCaraTemplate = new List<EHR_Care_Plan_Template_SU__c>();
+        for(Integer i = 0 ; i <iNumDeRegistros ; i++){
+            Integer md = math.mod(i, 2);
+
+            EHR_Care_Plan_Template_SU__c x = new EHR_Care_Plan_Template_SU__c();
+            x.Name =nombreUniversal;
+            x.Subespecialidad__c = 'Glaucoma';
+
+
+                //x.Activo__c = true;
+                x.AgendaTX__c = 'Programacion';
+                x.Tipo_CX_TX__c = 'Cirugía';
+
+            x.Estudios__c='estudio 1;estudio 2';
+            x.Tipo_de_Estimacion__c='Farmacia';
+            lCaraTemplate.add(x);
+        }
+        System.debug('el care plan template su es '+lCaraTemplate);
+        insert lCaraTemplate;
+        return lCaraTemplate;
+    }
+}

@@ -1,0 +1,112 @@
+<apex:page docType="html-5.0" showheader="false" controller="EHR_templateCtrl">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <style type="text/css">
+            .font-verde-claro{
+                color:#39c0cb !important;
+            }
+            .fondo-verde-claro{
+                background:#39c0cb !important;
+                color: #FEFEFE !important;
+            }
+            .fondo-verde-obscuro{
+                background:#00758D !important;
+                color: #FFFFFF !important;
+            }
+            .font-amarillo{
+                color: #FDCD30 !important;
+            }
+            .fondo-amarillo{
+                background-color: #FDCD30 !important;
+                border: 1px solid #FDCD30 !important;
+                color: #39c0cb;
+            }
+            .fondo-amarillo:hover{
+                background-color: #FFD54A !important;
+                border: 1px solid #FFD54A !important;
+            }
+            .fondo-gris-obscuro{
+                background:#435663 !important;
+                color: #FFFFFF !important;
+                font-size: 10px;
+            }
+        </style>
+        <apex:stylesheet value="{!URLFOR($Resource.SLDSSALAUNO, 'assets/styles/salesforce-lightning-design-system-vf.min.css')}" />
+        <apex:includeScript value="{!URLFOR($Resource.jquery214)}" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script>
+            var j$ = jQuery.noConflict();
+        </script>
+        <!-- Estructura -->
+        <div class="slds" style="background: #39c0cb;">
+            <div class="slds-grid slds-wrap">
+                <!-- Seccion Informacion Paciente -->
+                <div class="slds-col slds-size--1-of-1 slds-small-size--1-of-2 slds-medium-size--1-of-4">
+                    <div class="slds-m-around--x-small">
+                        <c:EHR_InformacionPaciente px="{!oPaciente}"/>
+                    </div>
+                </div>
+                <!-- Seccion Etapa -->
+                <div class="slds-col slds-size--1-of-1 slds-small-size--1-of-2 slds-medium-size--3-of-4">
+                    <div class="slds-size--2-of-2">
+                        <!-- Seccion Edicion -->
+                        <div class="slds-section">
+                            <apex:form id="frmTratamientosAplicados">
+                                <apex:actionStatus id="statuslistas" onstart="ocultaTodo();" onstop="muestraTodo();" >
+                                    <apex:facet name="start">
+                                        <div role="dialog" tabindex="-1" aria-labelledby="header43" class="slds-modal slds-fade-in-open">
+                                          <div class="slds-modal__container">
+                                            <div class="slds-modal__header">
+                                              <h2 id="header43" class="slds-text-heading--medium">Cargando...</h2>
+                                            </div>
+                                            <div class="slds-modal__content slds-p-around--medium" style="background: #39c0cb;">
+                                                <img src="{!URLFOR($Resource.Alberto_super_128)}" alt="Alberto" width="30%" class="slds-align--absolute-center" />
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div class="slds-backdrop slds-backdrop--open"></div>
+                                    </apex:facet>
+                                </apex:actionStatus>
+                                <c:EHR_Tratamiento_AplicacionDos />
+                                <!--<c:EHR_PlanTratamiento />-->
+
+                            </apex:form>
+                        </div>
+                        <!-- Estructura -->
+                        <div class="slds-section">
+                          <c:EHR_HistoricoRegistros idPx="{!oPaciente.Id}" lEtapas="{!oEPaciente.Configuracion_Flujo__r.Etapas_a_ver_de_Historico__c}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="ModalHistoriaClinica" class="minimizar" styleclass="slds-hide">
+               <c:EHR_HistoriaClinica idEtapa="{!oEPaciente.id}" idPaciente="{!oPaciente.id}"  /> <!-- ESTA CLASE ES LA DEL BUG-->
+            </div>
+            <div class="">
+                <chatter:feedWithFollowers entityId="{!oPaciente.Id}" showHeader="true"/>
+            </div>
+        </div>
+        <script>
+        /*SLDS Sections*/
+        $('.multiSelectPicklistTable').remove();
+        $('.multi-select').show();
+        $('.minimizar').hide();
+
+        /*SLDS Sections*/
+        $('#CerrarHistoriaClinica').click(function(){
+            $('#ModalHistoriaClinica').addClass('minimizar');
+            $('#ModalHistoriaClinica').hide();
+        });
+
+        $('#EditarHistoriaClinica').click(function(){
+            if($('#ModalHistoriaClinica').hasClass('minimizar')){
+                $('#ModalHistoriaClinica').removeClass('minimizar');
+                $('#ModalHistoriaClinica').show();
+            } else {
+                $('#ModalHistoriaClinica').addClass('minimizar');
+                $('#ModalHistoriaClinica').hide();
+            }
+        });
+
+        </script>
+    </html>
+</apex:page>
